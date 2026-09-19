@@ -13,13 +13,13 @@ add_compile_options(-Wall -Wextra)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SNDFILE REQUIRED sndfile)
 
-# Função auxiliar: add_tool(nome) compila src/nome.cpp
-function(add_tool name)
-  add_executable(${name} src/${name}.cpp)
+# Cada ficheiro src/NOME.cpp dá origem ao programa build/NOME.
+# Não é preciso editar este ficheiro para acrescentar programas:
+# basta criar o .cpp e correr "cmake --build build".
+file(GLOB PROGRAMS CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/src/*.cpp)
+foreach(src ${PROGRAMS})
+  get_filename_component(name ${src} NAME_WE)
+  add_executable(${name} ${src})
   target_include_directories(${name} PRIVATE src ${SNDFILE_INCLUDE_DIRS})
   target_link_libraries(${name} PRIVATE ${SNDFILE_LIBRARIES})
-endfunction()
-
-add_tool(wav_hist)
-add_tool(test_midside)
-# Próximos: add_tool(wav_quant) add_tool(wav_cmp) add_tool(wav_effects) ...
+endforeach()

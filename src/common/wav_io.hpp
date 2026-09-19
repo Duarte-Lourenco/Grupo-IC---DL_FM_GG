@@ -11,16 +11,16 @@
 #include <string>
 #include <vector>
 
-struct WavData {
+struct WavData {                //A "CAIXA" ONDE O FICHEIRO WAV VAI SER GUARDADO
     int channels = 0;
     int sampleRate = 0;
     int bitsPerSample = 0;       // 8, 16, 24 ou 32
     int format = 0;              // formato libsndfile original (para reescrever igual)
     std::vector<int32_t> samples;  // intercaladas
 
-    std::size_t frames() const { return channels ? samples.size() / channels : 0; }
+    std::size_t frames() const { return channels ? samples.size() / channels : 0; } //TAMANHO DA LISTA A DIVIDIR PELO NUMERO DE CANAIS (2 NO CASO DE ESTERO)
 
-    // Amostra n do canal c
+    // AMOSTRA EXATA, (n) SEJA NO CANAL (c) L (0) OU R(1)
     int32_t at(std::size_t n, int c) const { return samples[n * channels + c]; }
 };
 
@@ -35,6 +35,7 @@ inline int bitsFromFormat(int format) {
     }
 }
 
+// LÊ O FICHEIRO
 inline WavData readWav(const std::string& path) {
     SF_INFO info{};
     SNDFILE* f = sf_open(path.c_str(), SFM_READ, &info);
