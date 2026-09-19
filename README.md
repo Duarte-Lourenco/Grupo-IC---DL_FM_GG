@@ -1,6 +1,6 @@
 # Information and Coding 2026/27 — Trabalho Prático n.º 1
 
-Grupo: Duarte Lourenço (DL) · F. M. (FM) · G. G. (GG)
+Grupo: Duarte Lourenço (DL) · Francisco Matos (FM) · Guilherme Gabino (GG)
 
 Ferramentas de áudio, codec sem perdas e codec com perdas baseado na DCT.
 As instruções de instalação e execução serão acrescentadas à medida que os programas ficarem prontos.
