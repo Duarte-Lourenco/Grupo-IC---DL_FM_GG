@@ -860,6 +860,7 @@ fim do ficheiro e preencher:
 - **O que a IA propôs:**
 - **Como verificámos:**
 - **Estava correto?**
+- **O que decidimos nós:**
 - **O que alterámos:**
 - **O que aprendemos:**
 ```

@@ -18,22 +18,25 @@
 \newcommand{\prog}[1]{\texttt{#1}}
 
 % ---------------------------------------------------------------------
-% Modelo de caso de uso. Responde às perguntas do enunciado:
-% problema, proposta da IA, verificação, correção, alterações, aprendizagem.
-% Uso: \casoIA{Título}{Ferramenta}{Membro}{Problema}{Proposta}{Verificação}
-%              {Correto?}{Alterações}{Aprendizagem}
+% Modelo de caso de uso. Responde às perguntas do enunciado e mostra
+% onde esteve o NOSSO controlo: o que decidimos, como verificámos, o que
+% mudámos. Uso:
+%   \begin{casoIA}{Título}{Ferramenta}{Membro}
+%     \problema{...} \proposta{...} \verificacao{...}
+%     \correto{...} \decisao{...} \alteracoes{...} \aprendizagem{...}
+%   \end{casoIA}
 % ---------------------------------------------------------------------
-\newcommand{\casoIA}[9]{%
+\newenvironment{casoIA}[3]{%
   \subsubsection*{#1}
   \noindent\textit{Ferramenta:} #2 \quad \textit{Membro:} #3
-  \begin{description}\itemsep2pt
-    \item[Problema.] #4
-    \item[Proposta da IA.] #5
-    \item[Verificação.] #6
-    \item[Estava correto?] #7
-    \item[O que alterámos.] #8
-    \item[O que aprendemos.] #9
-  \end{description}}
+  \begin{description}\itemsep2pt}{\end{description}}
+\newcommand{\problema}[1]{\item[Problema.] #1}
+\newcommand{\proposta}[1]{\item[Proposta da IA.] #1}
+\newcommand{\verificacao}[1]{\item[Como verificámos.] #1}
+\newcommand{\correto}[1]{\item[Estava correto?] #1}
+\newcommand{\decisao}[1]{\item[O que decidimos nós.] #1}
+\newcommand{\alteracoes}[1]{\item[O que alterámos.] #1}
+\newcommand{\aprendizagem}[1]{\item[O que aprendemos.] #1}
 
 \title{Information and Coding --- Trabalho Prático n.º 1\\[4pt]
 \large Relatório 2: Utilização de ferramentas de Inteligência Artificial}
@@ -50,11 +53,35 @@
 \section{Introdução}
 % =====================================================================
 \subsection{Objetivo do relatório}
-\todo{Descrever o propósito e o âmbito.}
+\todo{Descrever o propósito. Mensagem central: a IA foi uma ferramenta
+importante, mas as decisões, a verificação e a compreensão do código foram
+do grupo.}
 
 \subsection{Metodologia de registo}
-\todo{Como foram registadas as interações ao longo do trabalho
-(p.\,ex.\ ficheiro partilhado no repositório, data, membro, ferramenta, tarefa).}
+\todo{Registo contínuo em \texttt{docs/ia\_log.md} (data, membro, ferramenta,
+problema, proposta, verificação, decisão do grupo). Este relatório resume
+esse registo.}
+
+% =====================================================================
+\section{A nossa abordagem: IA como ferramenta}
+% =====================================================================
+% Cada princípio deve ser sustentado por exemplos concretos da Secção 4.
+\subsection{Princípios que seguimos}
+\begin{enumerate}
+  \item \textbf{Compreender antes de integrar.} \todo{Nenhum código entrou
+        no repositório sem que o autor do PR o soubesse explicar.}
+  \item \textbf{As decisões de projeto são do grupo.} \todo{A IA propôs
+        alternativas; a escolha e a justificação foram nossas.}
+  \item \textbf{Verificação independente.} \todo{Testes automáticos,
+        comparação com ferramentas de referência (numpy, \prog{cmp}, FLAC),
+        revisão por outro membro em cada pull request.}
+  \item \textbf{Espírito crítico.} \todo{Propostas incorretas ou inadequadas
+        foram rejeitadas ou corrigidas (exemplos na Secção~5.2).}
+\end{enumerate}
+
+\subsection{Onde usámos e onde não usámos IA}
+\todo{Tabela ou lista: tarefas com apoio de IA vs.\ tarefas feitas sem IA.
+Ser rigoroso: esta secção tem de corresponder ao registo.}
 
 % =====================================================================
 \section{Ferramentas de IA utilizadas}
@@ -63,13 +90,12 @@
 \centering
 \caption{Ferramentas de IA utilizadas e finalidade.}
 \label{tab:ferramentas}
-\begin{tabularx}{\linewidth}{llX}
+\begin{tabularx}{\linewidth}{llXl}
 \toprule
-Ferramenta & Membro(s) & Utilização principal \\
+Ferramenta & Membro(s) & Utilização principal & Intensidade \\
 \midrule
-Claude (Anthropic) & -- & \todo{p.\,ex.\ planeamento, estrutura do relatório} \\
-GitHub Copilot & -- & \todo{p.\,ex.\ autocompletar código} \\
-ChatGPT & -- & \todo{} \\
+Claude (Anthropic) & -- & \todo{planeamento, base comum, \prog{wav\_hist}, estrutura dos relatórios} & \todo{} \\
+\todo{outra} & -- & \todo{} & \todo{} \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -80,37 +106,80 @@ ChatGPT & -- & \todo{} \\
 % Escolher os casos mais relevantes (sucessos E falhas) — 6 páginas é pouco.
 
 \subsection{Planeamento e escolhas tecnológicas}
-\casoIA{Escolha das linguagens de programação}
-  {Claude}{\todo{nome}}
-  {Decidir que linguagens usar em cada parte do trabalho.}
-  {\todo{p.\,ex.\ C++ para os programas e codecs, Python para gráficos e benchmarks.}}
-  {\todo{}}{\todo{}}{\todo{}}{\todo{}}
+\begin{casoIA}{Escolha das linguagens de programação}{Claude}{\todo{nome}}
+  \problema{Decidir que linguagens usar em cada parte do trabalho.}
+  \proposta{\todo{p.\,ex.\ C++ para os programas e codecs, Python para gráficos e benchmarks.}}
+  \verificacao{\todo{}}
+  \correto{\todo{}}
+  \decisao{\todo{}}
+  \alteracoes{\todo{}}
+  \aprendizagem{\todo{}}
+\end{casoIA}
 
 \subsection{Parte I --- Ferramentas de áudio}
-\casoIA{\todo{Título do caso}}
-  {\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}
+\begin{casoIA}{\todo{Título do caso}}{\todo{}}{\todo{}}
+  \problema{\todo{}}
+  \proposta{\todo{}}
+  \verificacao{\todo{}}
+  \correto{\todo{}}
+  \decisao{\todo{}}
+  \alteracoes{\todo{}}
+  \aprendizagem{\todo{}}
+\end{casoIA}
 
 \subsection{Parte II --- Codec sem perdas}
-\casoIA{\todo{p.\,ex.\ Implementação do código de Golomb}}
-  {\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}
+\begin{casoIA}{\todo{p.\,ex.\ Implementação do código de Golomb}}{\todo{}}{\todo{}}
+  \problema{\todo{}}
+  \proposta{\todo{}}
+  \verificacao{\todo{}}
+  \correto{\todo{}}
+  \decisao{\todo{}}
+  \alteracoes{\todo{}}
+  \aprendizagem{\todo{}}
+\end{casoIA}
 
 \subsection{Parte III --- Codec com perdas}
-\casoIA{\todo{p.\,ex.\ Quantização dos coeficientes DCT}}
-  {\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}
+\begin{casoIA}{\todo{p.\,ex.\ Quantização dos coeficientes DCT}}{\todo{}}{\todo{}}
+  \problema{\todo{}}
+  \proposta{\todo{}}
+  \verificacao{\todo{}}
+  \correto{\todo{}}
+  \decisao{\todo{}}
+  \alteracoes{\todo{}}
+  \aprendizagem{\todo{}}
+\end{casoIA}
 
 \subsection{Depuração, testes e medição de desempenho}
-\casoIA{\todo{Título do caso}}
-  {\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}
+\begin{casoIA}{\todo{Título do caso}}{\todo{}}{\todo{}}
+  \problema{\todo{}}
+  \proposta{\todo{}}
+  \verificacao{\todo{}}
+  \correto{\todo{}}
+  \decisao{\todo{}}
+  \alteracoes{\todo{}}
+  \aprendizagem{\todo{}}
+\end{casoIA}
 
 \subsection{Escrita dos relatórios}
-\casoIA{\todo{p.\,ex.\ Estrutura em \LaTeX{} dos relatórios}}
-  {Claude}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}
+\begin{casoIA}{\todo{p.\,ex.\ Estrutura em \LaTeX{} dos relatórios}}{Claude}{\todo{}}
+  \problema{\todo{}}
+  \proposta{\todo{}}
+  \verificacao{\todo{}}
+  \correto{\todo{}}
+  \decisao{\todo{}}
+  \alteracoes{\todo{}}
+  \aprendizagem{\todo{}}
+\end{casoIA}
 
 % =====================================================================
 \section{Avaliação crítica}
 % =====================================================================
 \subsection{Onde a IA foi mais útil}
 \todo{}
+
+\subsection{Propostas que rejeitámos ou corrigimos}
+\todo{Os exemplos mais fortes de espírito crítico: o que a IA propôs, porque
+não servia, o que fizemos em vez disso.}
 
 \subsection{Erros e limitações observados}
 \todo{Código incorreto, alucinações, soluções ineficientes, detalhes subtis
@@ -119,6 +188,11 @@ ChatGPT & -- & \todo{} \\
 \subsection{Estratégias de verificação}
 \todo{Testes de ida e volta (\prog{cmp} entre o original e o descodificado),
 comparação com ferramentas de referência, revisão manual.}
+
+\subsection{Porque não ficámos dependentes}
+\todo{Cada membro domina o código que integrou (defesa oral a 26/10);
+componentes centrais desenvolvidos e afinados por nós; testes independentes
+da IA.}
 
 \subsection{Impacto na produtividade e na aprendizagem}
 \todo{Tempo poupado vs.\ tempo gasto a corrigir; o que teríamos feito de outra forma.}
