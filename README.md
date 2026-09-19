@@ -3,7 +3,51 @@
 Grupo: Duarte Lourenço (DL) · F. M. (FM) · G. G. (GG)
 
 Ferramentas de áudio, codec sem perdas e codec com perdas baseado na DCT.
-As instruções de instalação e execução serão acrescentadas à medida que os programas ficarem prontos.
+## Instalação
+
+```bash
+sudo apt install build-essential cmake pkg-config libsndfile1-dev
+pip install numpy matplotlib
+
+cmake -B build
+cmake --build build        # binários ficam em build/
+```
+
+Os ficheiros de áudio de teste vão para `data/` (não entram no Git).
+
+## Programas
+
+### `wav_hist` — histogramas
+
+```bash
+./build/wav_hist [-k K] [-o saida.csv] entrada.wav canal
+#   canal: 0 (L), 1 (R), ..., mid = (L+R)/2, side = (L-R)/2
+#   -k K : bins que agrupam 2^K valores
+
+./build/wav_hist data/sample01.wav mid -o mid.csv
+./build/wav_hist -k 4 data/sample01.wav side
+```
+
+Gráficos (L, R, MID e SIDE de uma vez):
+
+```bash
+python3 scripts/plot_hist.py --wav data/sample01.wav
+python3 scripts/plot_hist.py --wav data/sample01.wav -k 8 --log -o hist.png
+```
+
+### Testes
+
+```bash
+./build/test_midside                     # reconstrução exata de L e R a partir de MID e SIDE
+./build/test_midside data/sample01.wav   # o mesmo, sobre todas as amostras de um ficheiro
+```
+
+## Código partilhado (`src/common/`)
+
+- `wav_io.hpp` — `readWav` / `writeWav` (PCM inteiro de 8 a 32 bits, via libsndfile).
+- `channels.hpp` — `midOf`, `halfSideOf`, `sideOf`, `fromMidSide`.
+  **Convenção:** a divisão inteira por 2 é sempre feita com `>> 1` (arredonda para −∞).
+  Usar sempre estas funções.
 
 ---
 
