@@ -1,0 +1,131 @@
+% =====================================================================
+%  Information and Coding 2026/27 — Lab work n.º 1
+%  Relatório 2: utilização de ferramentas de IA (máximo 6 páginas)
+% =====================================================================
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[portuguese]{babel}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO:} #1\textbf{]}}}
+\newcommand{\prog}[1]{\texttt{#1}}
+
+% ---------------------------------------------------------------------
+% Modelo de caso de uso. Responde às perguntas do enunciado:
+% problema, proposta da IA, verificação, correção, alterações, aprendizagem.
+% Uso: \casoIA{Título}{Ferramenta}{Membro}{Problema}{Proposta}{Verificação}
+%              {Correto?}{Alterações}{Aprendizagem}
+% ---------------------------------------------------------------------
+\newcommand{\casoIA}[9]{%
+  \subsubsection*{#1}
+  \noindent\textit{Ferramenta:} #2 \quad \textit{Membro:} #3
+  \begin{description}\itemsep2pt
+    \item[Problema.] #4
+    \item[Proposta da IA.] #5
+    \item[Verificação.] #6
+    \item[Estava correto?] #7
+    \item[O que alterámos.] #8
+    \item[O que aprendemos.] #9
+  \end{description}}
+
+\title{Information and Coding --- Trabalho Prático n.º 1\\[4pt]
+\large Relatório 2: Utilização de ferramentas de Inteligência Artificial}
+\author{%
+  Nome Apelido 1 (n.º mec.~XXXXX) \and
+  Nome Apelido 2 (n.º mec.~XXXXX) \and
+  Nome Apelido 3 (n.º mec.~XXXXX)}
+\date{Universidade de Aveiro --- DETI\\ Outubro de 2026}
+
+\begin{document}
+\maketitle
+
+% =====================================================================
+\section{Introdução}
+% =====================================================================
+\subsection{Objetivo do relatório}
+\todo{Descrever o propósito e o âmbito.}
+
+\subsection{Metodologia de registo}
+\todo{Como foram registadas as interações ao longo do trabalho
+(p.\,ex.\ ficheiro partilhado no repositório, data, membro, ferramenta, tarefa).}
+
+% =====================================================================
+\section{Ferramentas de IA utilizadas}
+% =====================================================================
+\begin{table}[h]
+\centering
+\caption{Ferramentas de IA utilizadas e finalidade.}
+\label{tab:ferramentas}
+\begin{tabularx}{\linewidth}{llX}
+\toprule
+Ferramenta & Membro(s) & Utilização principal \\
+\midrule
+Claude (Anthropic) & -- & \todo{p.\,ex.\ planeamento, estrutura do relatório} \\
+GitHub Copilot & -- & \todo{p.\,ex.\ autocompletar código} \\
+ChatGPT & -- & \todo{} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =====================================================================
+\section{Casos de utilização}
+% =====================================================================
+% Escolher os casos mais relevantes (sucessos E falhas) — 6 páginas é pouco.
+
+\subsection{Planeamento e escolhas tecnológicas}
+\casoIA{Escolha das linguagens de programação}
+  {Claude}{\todo{nome}}
+  {Decidir que linguagens usar em cada parte do trabalho.}
+  {\todo{p.\,ex.\ C++ para os programas e codecs, Python para gráficos e benchmarks.}}
+  {\todo{}}{\todo{}}{\todo{}}{\todo{}}
+
+\subsection{Parte I --- Ferramentas de áudio}
+\casoIA{\todo{Título do caso}}
+  {\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}
+
+\subsection{Parte II --- Codec sem perdas}
+\casoIA{\todo{p.\,ex.\ Implementação do código de Golomb}}
+  {\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}
+
+\subsection{Parte III --- Codec com perdas}
+\casoIA{\todo{p.\,ex.\ Quantização dos coeficientes DCT}}
+  {\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}
+
+\subsection{Depuração, testes e medição de desempenho}
+\casoIA{\todo{Título do caso}}
+  {\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}
+
+\subsection{Escrita dos relatórios}
+\casoIA{\todo{p.\,ex.\ Estrutura em \LaTeX{} dos relatórios}}
+  {Claude}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}{\todo{}}
+
+% =====================================================================
+\section{Avaliação crítica}
+% =====================================================================
+\subsection{Onde a IA foi mais útil}
+\todo{}
+
+\subsection{Erros e limitações observados}
+\todo{Código incorreto, alucinações, soluções ineficientes, detalhes subtis
+(p.\,ex.\ divisão inteira com números negativos, formato WAV).}
+
+\subsection{Estratégias de verificação}
+\todo{Testes de ida e volta (\prog{cmp} entre o original e o descodificado),
+comparação com ferramentas de referência, revisão manual.}
+
+\subsection{Impacto na produtividade e na aprendizagem}
+\todo{Tempo poupado vs.\ tempo gasto a corrigir; o que teríamos feito de outra forma.}
+
+% =====================================================================
+\section{Conclusões}
+% =====================================================================
+\todo{Balanço global e recomendações para uso futuro.}
+
+\end{document}

@@ -1,0 +1,33 @@
+# Compilação
+build/
+*.o
+*.a
+*.so
+
+# Dados de áudio e resultados gerados
+data/
+*.wav
+*.flac
+*.mp3
+*.zst
+*.xz
+results/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# LaTeX (auxiliares)
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store

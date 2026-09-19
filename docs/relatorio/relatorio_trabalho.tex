@@ -1,0 +1,258 @@
+% =====================================================================
+%  Information and Coding 2026/27 — Lab work n.º 1
+%  Relatório 1: descrição do trabalho (máximo 12 páginas)
+%  Nota: o enunciado proíbe código no relatório; usar diagramas,
+%  tabelas e gráficos.
+% =====================================================================
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[portuguese]{babel}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black,citecolor=blue!50!black}
+
+% Marcador para texto por escrever (remover antes da entrega)
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO:} #1\textbf{]}}}
+\newcommand{\prog}[1]{\texttt{#1}}
+
+\title{Information and Coding --- Trabalho Prático n.º 1\\[4pt]
+\large Relatório 1: Ferramentas de áudio e codecs com e sem perdas}
+\author{%
+  Nome Apelido 1 (n.º mec.~XXXXX) \and
+  Nome Apelido 2 (n.º mec.~XXXXX) \and
+  Nome Apelido 3 (n.º mec.~XXXXX)}
+\date{Universidade de Aveiro --- DETI\\ Outubro de 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\todo{Resumo de 5--8 linhas: o que foi feito, as principais escolhas
+(linguagens, preditor, codificação entrópica, DCT) e os principais resultados
+(taxa de compressão face ao FLAC, SNR face ao MP3/AAC).}
+\end{abstract}
+
+\tableofcontents
+% (Remover o índice se for preciso poupar espaço para caber nas 12 páginas)
+
+% =====================================================================
+\section{Introdução}
+% =====================================================================
+\subsection{Objetivos}
+\todo{Resumo dos objetivos das Partes I, II e III.}
+
+\subsection{Organização do relatório}
+\todo{Uma frase por secção.}
+
+% =====================================================================
+\section{Arquitetura e escolhas tecnológicas}
+% =====================================================================
+\subsection{Linguagens de programação}
+\todo{Porquê C++ nos programas (desempenho, memória, avaliação do tempo de
+execução) e Python nos gráficos, na análise e nos benchmarks.}
+
+\subsection{Bibliotecas e dependências}
+\todo{libsndfile (I/O de WAV), numpy/matplotlib, outras.}
+
+\subsection{Organização do repositório e compilação}
+\todo{Estrutura de diretórios, CMake/Makefile, módulos partilhados
+(leitura de WAV, \emph{BitStream}, codificador Golomb, métricas).}
+
+\subsection{Conjunto de dados de teste}
+\todo{Ficheiros usados (eLearning e outros): duração, taxa de amostragem,
+n.º de canais, bits por amostra, género musical/fala. Tabela resumo.}
+
+\begin{table}[h]
+\centering
+\caption{Ficheiros de áudio usados nos testes.}
+\label{tab:dataset}
+\begin{tabular}{lccccl}
+\toprule
+Ficheiro & Canais & Fs (Hz) & Bits & Duração (s) & Tipo \\
+\midrule
+\todo{sample01.wav} & 2 & 44100 & 16 & -- & Música \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Parte I --- Ferramentas de processamento de áudio}
+% =====================================================================
+\subsection{\prog{wav\_hist}: histogramas}
+\subsubsection{Histograma por canal}
+\todo{Método e exemplo de gráfico (L e R).}
+\subsubsection{Canais MID e SIDE}
+\todo{Definição com divisão inteira; convenção de arredondamento adotada.}
+\subsubsection{Reconstrução exata de L e R a partir de MID e SIDE}
+\todo{Resposta à pergunta da nota de rodapé 2 do enunciado.}
+\subsubsection{Bins mais grosseiros ($2^k$ valores)}
+\todo{Implementação e comparação visual para vários $k$.}
+\subsubsection{Análise dos resultados}
+\todo{O que os histogramas mostram (distribuição de L/R vs.\ SIDE, entropia)
+e a relação com a codificação das Partes II e III.}
+
+\subsection{\prog{wav\_quant}: quantização escalar uniforme}
+\todo{Método (redução de bits, arredondamento vs.\ truncatura), formato de saída.}
+
+\subsection{\prog{wav\_cmp}: métricas de erro}
+\subsubsection{Métricas implementadas}
+\todo{Definições de $L^2$ (MSE), $L^\infty$ e SNR, por canal e para a média.}
+\begin{equation}
+  \mathrm{SNR} = 10\log_{10}\frac{\sum_n x[n]^2}{\sum_n \left(x[n]-\tilde{x}[n]\right)^2}\ \text{dB}
+\end{equation}
+\subsubsection{Resultados da quantização}
+\todo{Tabela/gráfico: SNR e $L^\infty$ em função do n.º de bits
+(p.\,ex.\ 16, 12, 8, 6, 4, 2). Comparar com o valor teórico de $\approx$\,6{,}02\,dB/bit.}
+
+\subsection{\prog{wav\_effects}: efeitos de áudio}
+\subsubsection{Eco simples e ecos múltiplos}
+\todo{Equações às diferenças e parâmetros.}
+\subsubsection{Modulação de amplitude}
+\todo{}
+\subsubsection{Atrasos variáveis no tempo}
+\todo{}
+\subsubsection{Outros efeitos}
+\todo{Opcional.}
+
+% =====================================================================
+\section{Parte II --- Codec de áudio sem perdas}
+% =====================================================================
+\subsection{Visão geral e diagrama de blocos}
+\todo{Figura com o diagrama de blocos do codificador e do descodificador.}
+
+\subsection{Formato do ficheiro comprimido}
+\todo{Cabeçalho (metadados do WAV necessários para reconstrução bit a bit),
+organização em blocos/\emph{frames}.}
+
+\subsection{Módulo \emph{BitStream}}
+\todo{Escrita/leitura bit a bit, eficiência (\emph{buffering}).}
+
+\subsection{Descorrelação entre canais}
+\todo{MID/SIDE e alternativas; escolha adaptativa por bloco.}
+
+\subsection{Predição temporal}
+\todo{Preditores polinomiais fixos de ordem 0--3 e/ou LPC; escolha por bloco;
+justificação experimental.}
+
+\subsection{Codificação entrópica dos resíduos}
+\subsubsection{Códigos de Golomb/Rice}
+\todo{Mapeamento de inteiros com sinal, escolha do parâmetro $m$.}
+\subsubsection{Adaptação do parâmetro}
+\todo{Estimação por bloco vs.\ adaptação contínua.}
+
+\subsection{Parâmetros e opções do codificador}
+\todo{Tamanho de bloco, ordem do preditor, etc.; efeito de cada opção.}
+
+\subsection{Avaliação experimental}
+\subsubsection{Metodologia}
+\todo{Máquina, compilador e flags, medição do tempo e da memória
+(\prog{/usr/bin/time -v}), n.º de repetições.}
+\subsubsection{Estudo dos parâmetros do codec}
+\todo{Gráficos: taxa de compressão vs.\ tamanho de bloco, ordem, etc.}
+\subsubsection{Comparação com o estado da arte}
+\todo{FLAC (vários níveis), zstd, lzma/xz, gzip, bzip2...}
+
+\begin{table}[h]
+\centering
+\caption{Comparação de codecs sem perdas (médias sobre o conjunto de teste).}
+\label{tab:lossless}
+\begin{tabular}{lcccc}
+\toprule
+Codec & Taxa de compressão & T.\ codif.\ (s) & T.\ descodif.\ (s) & Memória (MB) \\
+\midrule
+O nosso & -- & -- & -- & -- \\
+FLAC -8 & -- & -- & -- & -- \\
+zstd -19 & -- & -- & -- & -- \\
+xz -9 & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Discussão}
+\todo{}
+
+% =====================================================================
+\section{Parte III --- Codec de áudio com perdas baseado na DCT}
+% =====================================================================
+\subsection{Visão geral e diagrama de blocos}
+\todo{Figura com o diagrama de blocos.}
+
+\subsection{Segmentação em blocos e janelamento}
+\todo{Tamanho do bloco, sobreposição, janela; efeito nos artefactos de bloco.}
+
+\subsection{Transformada DCT}
+\todo{Tipo de DCT (DCT-II/IV, MDCT), implementação (p.\,ex.\ FFTW) e custo computacional.}
+
+\subsection{Quantização dos coeficientes}
+\subsubsection{Quantização uniforme}
+\todo{}
+\subsubsection{Quantização dependente da frequência}
+\todo{Bandas, pesos, eliminação de coeficientes de alta frequência;
+eventual modelo psicoacústico simplificado.}
+
+\subsection{Codificação entrópica dos coeficientes}
+\todo{Reutilização do Golomb da Parte II, codificação de zeros, etc.}
+
+\subsection{Controlo de débito e opções do codificador}
+\todo{Como o utilizador escolhe o compromisso débito--distorção.}
+
+\subsection{Justificação experimental das decisões}
+\todo{Curvas débito--distorção (SNR vs.\ kbps) para cada alternativa testada.}
+
+\subsection{Comparação com codecs MPEG}
+\todo{MP3 e AAC (e p.\,ex.\ Opus) via ffmpeg: taxa de compressão, SNR,
+tempos e memória. Gráfico SNR vs.\ débito.}
+
+\begin{figure}[h]
+\centering
+\fbox{\parbox[c][4cm][c]{0.7\linewidth}{\centering Gráfico SNR (dB) vs.\ débito (kbps)}}
+% \includegraphics[width=0.7\linewidth]{figuras/rd_curve.pdf}
+\caption{Desempenho débito--distorção do codec proposto e dos codecs MPEG.}
+\label{fig:rd}
+\end{figure}
+
+\subsection{Discussão}
+\todo{Limitações da SNR como medida de qualidade percetual, etc.}
+
+% =====================================================================
+\section{Conclusões e trabalho futuro}
+% =====================================================================
+\todo{Principais resultados e o que poderia ser melhorado.}
+
+% =====================================================================
+\section{Manual de utilização}
+% =====================================================================
+\subsection{Requisitos e instalação}
+\todo{Dependências (apt), clonar o repositório, compilar.}
+
+\subsection{Execução dos programas}
+\todo{Sintaxe e exemplo para cada programa:
+\prog{wav\_hist}, \prog{wav\_quant}, \prog{wav\_cmp}, \prog{wav\_effects},
+\prog{wav\_lossless\_enc}/\prog{wav\_lossless\_dec},
+\prog{wav\_lossy\_enc}/\prog{wav\_lossy\_dec}.}
+
+\subsection{Reprodução dos resultados}
+\todo{Scripts de benchmark e de geração de gráficos.}
+
+% =====================================================================
+\section*{Contribuição dos autores}
+\addcontentsline{toc}{section}{Contribuição dos autores}
+% =====================================================================
+\todo{Percentagem e tarefas de cada membro (p.\,ex.\ 33/33/33).}
+
+% =====================================================================
+\begin{thebibliography}{9}
+\bibitem{flac} Xiph.Org Foundation, \emph{FLAC --- Free Lossless Audio Codec}, \url{https://xiph.org/flac/}.
+\bibitem{sndfile} E.~de Castro Lopo, \emph{libsndfile}, \url{https://libsndfile.github.io/libsndfile/}.
+\bibitem{sayood} K.~Sayood, \emph{Introduction to Data Compression}, 5.\textsuperscript{a} ed., Morgan Kaufmann, 2017.
+\end{thebibliography}
+
+\end{document}
