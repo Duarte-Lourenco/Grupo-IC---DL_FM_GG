@@ -1,0 +1,42 @@
+=== 16 bits
+data/sample01.wav: 16 -> 16 bits (65536 níveis, passo 1, ponto médio)
+frames: 1294188   canais: 2   taxa: 44100 Hz   bits: 16
+L     MSE =         0.0000   Linf =        0   SNR = inf dB
+R     MSE =         0.0000   Linf =        0   SNR = inf dB
+MID   MSE =         0.0000   Linf =        0   SNR = inf dB
+=== 12 bits
+data/sample01.wav: 16 -> 12 bits (4096 níveis, passo 16, ponto médio)
+frames: 1294188   canais: 2   taxa: 44100 Hz   bits: 16
+L     MSE =        21.4813   Linf =        8   SNR = 58.4658 dB
+R     MSE =        21.4971   Linf =        8   SNR = 58.5650 dB
+MID   MSE =        11.2406   Linf =        8   SNR = 61.1114 dB
+=== 10 bits
+data/sample01.wav: 16 -> 10 bits (1024 níveis, passo 64, ponto médio)
+frames: 1294188   canais: 2   taxa: 44100 Hz   bits: 16
+L     MSE =       341.5950   Linf =       32   SNR = 46.4513 dB
+R     MSE =       341.2984   Linf =       32   SNR = 46.5575 dB
+MID   MSE =       171.1680   Linf =       32   SNR = 49.2851 dB
+=== 8 bits
+data/sample01.wav: 16 -> 8 bits (256 níveis, passo 256, ponto médio)
+frames: 1294188   canais: 2   taxa: 44100 Hz   bits: 16
+L     MSE =      5462.7527   Linf =      128   SNR = 34.4123 dB
+R     MSE =      5465.1055   Linf =      128   SNR = 34.5129 dB
+MID   MSE =      2735.4875   Linf =      128   SNR = 37.2490 dB
+=== 6 bits
+data/sample01.wav: 16 -> 6 bits (64 níveis, passo 1024, ponto médio)
+frames: 1294188   canais: 2   taxa: 44100 Hz   bits: 16
+L     MSE =     87489.4815   Linf =      512   SNR = 22.3668 dB
+R     MSE =     87398.8690   Linf =      512   SNR = 22.4738 dB
+MID   MSE =     43753.9849   Linf =      512   SNR = 25.2091 dB
+=== 4 bits
+data/sample01.wav: 16 -> 4 bits (16 níveis, passo 4096, ponto médio)
+frames: 1294188   canais: 2   taxa: 44100 Hz   bits: 16
+L     MSE =   1408173.9318   Linf =     2048   SNR = 10.2998 dB
+R     MSE =   1407431.2645   Linf =     2048   SNR = 10.4046 dB
+MID   MSE =    747137.6597   Linf =     2048   SNR = 12.8853 dB
+=== 2 bits
+data/sample01.wav: 16 -> 2 bits (4 níveis, passo 16384, ponto médio)
+frames: 1294188   canais: 2   taxa: 44100 Hz   bits: 16
+L     MSE =  32815340.5402   Linf =     8192   SNR = -3.3744 dB
+R     MSE =  32622054.6383   Linf =     8192   SNR = -3.2463 dB
+MID   MSE =  24687060.1050   Linf =     8192   SNR = -2.3054 dB
