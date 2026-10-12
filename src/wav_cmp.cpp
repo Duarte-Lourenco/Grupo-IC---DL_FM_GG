@@ -9,49 +9,11 @@
 // onde x = original e y = modificado.
 
 #include "common/channels.hpp"
+#include "common/metrics.hpp"
 #include "common/wav_io.hpp"
 
-#include <cmath>
-#include <cstdint>
-#include <cstdlib>
-#include <iomanip>
 #include <iostream>
-#include <limits>
 #include <string>
-
-// Acumula as estatísticas de um "canal" (L, R ou MID).
-struct Stats {
-    double sumSig = 0.0;   // soma de x^2       (energia do sinal)
-    double sumErr = 0.0;   // soma de (x-y)^2   (energia do erro)
-    int64_t maxAbs = 0;    // max |x - y|
-    std::size_t n = 0;
-
-    void add(int64_t x, int64_t y) {
-        const int64_t e = x - y;
-        // double chega: para 16 bits os quadrados cabem sempre; para 32 bits
-        // evita-se o overflow de int64 ao somar milhões de amostras.
-        sumSig += static_cast<double>(x) * static_cast<double>(x);
-        sumErr += static_cast<double>(e) * static_cast<double>(e);
-        const int64_t a = e < 0 ? -e : e;
-        if (a > maxAbs) maxAbs = a;
-        ++n;
-    }
-
-    void print(const std::string& name) const {
-        const double mse = n ? sumErr / static_cast<double>(n) : 0.0;
-        std::cout << std::left << std::setw(6) << name << std::right
-                  << "MSE = " << std::setw(14) << std::fixed << std::setprecision(4) << mse
-                  << "   Linf = " << std::setw(8) << maxAbs << "   SNR = ";
-        if (sumErr == 0.0) {
-            std::cout << "inf";                       // ficheiros idênticos
-        } else if (sumSig == 0.0) {
-            std::cout << "-inf";                      // original em silêncio, mas com erro
-        } else {
-            std::cout << std::setprecision(4) << 10.0 * std::log10(sumSig / sumErr);
-        }
-        std::cout << " dB\n";
-    }
-};
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
