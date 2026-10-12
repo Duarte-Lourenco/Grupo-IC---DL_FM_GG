@@ -84,3 +84,17 @@ Modelo:
 ### 2026-09-19 — Duarte — Claude (Cowork)
 **Tarefa:** abordagem ao Relatório 2.
 - **O que decidimos nós:** apresentar a IA como tutor e ferramenta, com as decisões e a verificação do lado do grupo, e registar este uso de forma factual.
+
+### 2026-10-12 — Francisco — Claude (Claude Code)
+**Tarefa:** Parte III — codec com perdas, `metrics.hpp` e comparação com MP3/AAC.
+- **Problema:** implementar um codec baseado na DCT com a melhor relação débito-distorção possível e justificar as escolhas.
+- **O que a IA propôs:** MDCT (janela seno, 50 % de sobreposição) calculada com FFT; MID/SIDE ortonormal; passo de quantização único com zona morta; codificação aritmética adaptativa com contexto em vez de Rice; bisseção do passo para atingir um débito ou SNR alvo; síntese bloco a bloco para poupar memória.
+- **Como verificámos:**
+  - `test_mdct`: a DCT-IV rápida coincide com a definição direta (erro < 1e-9), a energia conserva-se e a reconstrução sem quantização é perfeita (N = 16 a 2048);
+  - o SNR anunciado pelo codificador coincide com o medido pelo `wav_cmp` no ficheiro descodificado;
+  - casos-limite: mono, 8 e 24 bits, ficheiro com 1 e 100 amostras, silêncio;
+  - o alinhamento do MP3/AAC descodificado foi confirmado por correlação cruzada (atraso 0), para a comparação de SNR ser justa.
+- **Estava correto?** Sim nos testes acima. Primeira medição do benchmark com erro: o `awk` lia os decimais com o locale português (`LC_ALL=C` nos scripts resolveu).
+- **O que decidimos nós:** *(a preencher pelo Francisco)*
+- **O que alterámos:** *(a preencher pelo Francisco)*
+- **O que aprendemos:** *(a preencher pelo Francisco)*

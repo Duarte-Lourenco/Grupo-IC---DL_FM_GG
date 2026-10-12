@@ -37,10 +37,12 @@ Entrega: **25 out 2026** · Discussão: **26 out 2026** · Enunciado: `trab1.pdf
 | `wav_raw.hpp` (preservação byte a byte do WAV) | Duarte | ✅ |
 | Codec sem perdas (`wav_lossless_enc` / `_dec`) | Duarte | ✅ |
 | Comparação com FLAC, zstd e xz (`scripts/benchmark_lossless.sh`) | Duarte | ✅ |
-| `metrics.hpp` (MSE, L∞, SNR partilhados) | Francisco | ⬜ |
-| DCT e inversa | Francisco | ⬜ |
-| Codec com perdas (`wav_lossy_enc` / `_dec`) | Francisco | ⬜ |
-| Comparação com MP3 e AAC | Francisco | ⬜ |
+| `metrics.hpp` (MSE, L∞, SNR partilhados) | Francisco | ✅ |
+| `mdct.hpp` (MDCT rápida por FFT) + `test_mdct` | Francisco | ✅ |
+| `rangecoder.hpp` (codificação aritmética adaptativa) | Francisco | ✅ |
+| Codec com perdas (`wav_lossy_enc` / `_dec`) | Francisco | ✅ |
+| Experiências dos parâmetros (`scripts/experiments_lossy.sh`) | Francisco | ✅ |
+| Comparação com MP3 e AAC (`scripts/benchmark_lossy.sh`, `scripts/plot_rd.py`) | Francisco | ✅ |
 | Relatório 1 (`docs/relatorio/relatorio_trabalho.tex`) | ambos | 🟡 introdução, tecnologias e dados |
 | Relatório 2 (`docs/relatorio/relatorio_ia.tex`) | ambos | 🟡 estrutura e registo em `docs/ia_log.md` |
 
@@ -48,14 +50,14 @@ Entrega: **25 out 2026** · Discussão: **26 out 2026** · Enunciado: `trab1.pdf
 
 - **Quantização:** o SNR desce 6,01 dB por bit e o MSE medido coincide com Δ²/12 (`docs/resultados/snr_quant_sample01.txt`).
 - **Codec sem perdas:** taxa média de 1,76 nos 7 ficheiros, contra 1,89 do `flac -8`, 1,21 do `xz -9` e 1,12 do `zstd -19`; saída igual ao original byte a byte (`docs/resultados/benchmark_lossless.csv`).
+- **Codec com perdas:** ao mesmo débito, 8 a 14 dB mais SNR do que o MP3 (LAME) e 11 a 16 dB mais do que o AAC (ffmpeg) — p. ex. a 128 kbit/s, 33,9 dB contra 19,7 (MP3) e 18,8 (AAC), média dos 7 ficheiros. Descodifica 30 s de áudio em ~0,05 s, com ~22 MiB de memória máxima (`docs/resultados/benchmark_lossy.csv`, figura `docs/relatorio/figuras/rd_lossy.png`). O MP3 e o AAC otimizam o que se ouve, não o SNR, por isso esta comparação favorece-nos; isso tem de ser dito no relatório.
+- **Parâmetros do codec com perdas:** bloco N = 2048 e arredondamento z = 0,40 são os melhores a 64 e a 128 kbit/s; o MID/SIDE ganha 0,03–0,13 dB (`docs/resultados/experiments_lossy.csv`).
 
 ### O que falta
 
-1. Parte III: DCT, quantização dos coeficientes, `wav_lossy_enc`/`_dec` e comparação com MP3/AAC (Francisco).
-2. `metrics.hpp` extraído do `wav_cmp`, para o SNR ser usado dentro do codec com perdas.
-3. Relatório 1: secções da Parte I, Parte II e Parte III, conclusões e manual.
-4. Relatório 2: texto a partir do `docs/ia_log.md`.
-5. Secção de contribuições dos autores, para dois elementos.
+1. Relatório 1: secções da Parte I, Parte II e Parte III, conclusões e manual.
+2. Relatório 2: texto a partir do `docs/ia_log.md`.
+3. Secção de contribuições dos autores, para dois elementos.
 
 ---
 
@@ -70,15 +72,26 @@ Grupo-IC---DL_FM_GG/
 │   ├── common/             ← BASE COMUM, usada por todos os programas
 │   │   ├── wav_io.hpp      ←   ler e escrever WAV
 │   │   ├── channels.hpp    ←   MID e SIDE
-│   │   ├── bitstream.hpp   ←   (Guilherme) escrever/ler bits
-│   │   └── golomb.hpp      ←   (Guilherme) códigos de Golomb
+│   │   ├── bitstream.hpp   ←   escrever/ler bits
+│   │   ├── golomb.hpp      ←   códigos de Golomb/Rice
+│   │   ├── wav_raw.hpp     ←   cabeçalho do WAV original (codec sem perdas)
+│   │   ├── metrics.hpp     ←   MSE, L∞ e SNR
+│   │   ├── mdct.hpp        ←   MDCT rápida (codec com perdas)
+│   │   ├── rangecoder.hpp  ←   codificador aritmético (codec com perdas)
+│   │   └── lossy.hpp       ←   partes comuns do codec com perdas
 │   ├── test_midside.cpp    ← teste da reconstrução MID/SIDE
 │   ├── wav_hist.cpp        ← (Duarte)
 │   ├── wav_cmp.cpp         ← (Francisco)
 │   ├── wav_quant.cpp       ← (Francisco)
-│   └── wav_effects.cpp     ← (Guilherme)
+│   ├── wav_effects.cpp     ← (Guilherme)
+│   ├── wav_lossless_enc/dec.cpp ← (Duarte)
+│   └── wav_lossy_enc/dec.cpp    ← (Francisco)
 ├── scripts/
-│   └── plot_hist.py        ← gráficos dos histogramas
+│   ├── plot_hist.py        ← gráficos dos histogramas
+│   ├── benchmark_lossless.sh ← comparação com FLAC/zstd/xz
+│   ├── benchmark_lossy.sh  ← comparação com MP3/AAC
+│   ├── experiments_lossy.sh ← escolha dos parâmetros do codec com perdas
+│   └── plot_rd.py          ← curva débito-distorção
 ├── docs/
 │   ├── ia_log.md           ← registo do uso de IA (Relatório 2)
 │   └── relatorio/          ← relatórios em LaTeX
@@ -382,7 +395,36 @@ Base dos codecs das Partes II e III.
 ./build/wav_lossy_dec comprimido output.wav
 ```
 
-Detalhes a definir quando a Parte I estiver fechada.
+**Codec com perdas (Francisco).** Cadeia: MID/SIDE ortonormal → MDCT com janela seno
+e sobreposição de 50 % → quantização uniforme com zona morta (o mesmo passo Δ em todos
+os coeficientes) → codificação aritmética binária adaptativa, com contexto (zona de
+frequência × amplitude dos vizinhos no mesmo bloco e no anterior).
+
+Porquê assim:
+- **MDCT e não DCT em blocos separados:** sem sobreposição, o erro cria descontinuidades
+  nas fronteiras dos blocos. A MDCT continua a ter N coeficientes por N amostras.
+- **Tudo ortonormal:** o erro nos coeficientes é igual ao erro no áudio. Para o SNR, o
+  melhor é então o mesmo passo em todos os coeficientes (sem modelo psicoacústico).
+- **Codificação aritmética e não Rice:** a maioria dos coeficientes quantizados é 0, e o
+  Rice gasta pelo menos 1 bit por valor; o aritmético gasta frações de bit.
+
+```bash
+./build/wav_lossy_enc -r 128 data/sample01.wav /tmp/s1.icy   # débito alvo (kbit/s)
+./build/wav_lossy_enc -s 30  data/sample01.wav /tmp/s1.icy   # ou SNR alvo (dB)
+./build/wav_lossy_enc -q 500 data/sample01.wav /tmp/s1.icy   # ou passo fixo
+./build/wav_lossy_dec /tmp/s1.icy /tmp/s1.wav
+./build/wav_cmp data/sample01.wav /tmp/s1.wav
+```
+
+Outras opções: `-n N` (bloco MDCT, omissão 2048), `-z R` (arredondamento, omissão 0.40),
+`-l` (L/R em vez de MID/SIDE). Testes e resultados:
+
+```bash
+./build/test_mdct                                  # MDCT rápida = definição; reconstrução perfeita
+scripts/experiments_lossy.sh                       # SNR para cada N, z e MID/SIDE
+scripts/benchmark_lossy.sh                         # vs. MP3 e AAC (precisa de ffmpeg)
+python3 scripts/plot_rd.py                         # figura SNR vs. débito
+```
 
 ---
 
