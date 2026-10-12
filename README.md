@@ -2,9 +2,10 @@
 
 | Pessoa | Nome | Parte I | Partes II / III |
 |---|---|---|---|
-| **A** | Duarte Lourenço | Base comum + `wav_hist` | Codec sem perdas (predição, formato do ficheiro, enc/dec) |
-| **B** | Francisco Matos | `wav_cmp` + `wav_quant` | Codec com perdas (DCT, quantização) |
-| **C** | Guilherme Gabino | `wav_effects` + BitStream + Golomb | Codificação entrópica + scripts de benchmark |
+| **A** | Duarte Lourenço | Base comum, `wav_hist`, BitStream, Golomb | Codec sem perdas e comparação com FLAC/zstd/xz |
+| **B** | Francisco Matos | `wav_cmp`, `wav_quant`, `wav_effects` | Codec com perdas (DCT), `metrics.hpp`, comparação com MP3/AAC |
+
+O grupo passou a ser de dois elementos a partir de outubro.
 
 Entrega: **25 out 2026** · Discussão: **26 out 2026** · Enunciado: `trab1.pdf`
 
@@ -25,18 +26,36 @@ Entrega: **25 out 2026** · Discussão: **26 out 2026** · Enunciado: `trab1.pdf
 
 | Componente | Responsável | Estado |
 |---|---|---|
-| Base comum (`wav_io.hpp`, `channels.hpp`, CMake) | Duarte | ✅ feita (PR `base-comum`) |
-| `test_midside` | Duarte | ✅ feito |
-| `wav_hist` + `scripts/plot_hist.py` | Duarte | 🟡 feito, falta PR `wav-hist` |
-| `wav_cmp` | Francisco | ⬜ por fazer |
-| `wav_quant` | Francisco | ⬜ por fazer |
-| `wav_effects` | Guilherme | ⬜ por fazer |
-| `bitstream.hpp` + `golomb.hpp` | Guilherme | ⬜ por fazer |
-| Codec sem perdas (Parte II) | Duarte + Guilherme | ⬜ |
-| Codec com perdas (Parte III) | Francisco | ⬜ |
-| Relatórios (`docs/relatorio/`) | Todos | ⬜ |
+| Base comum (`wav_io.hpp`, `channels.hpp`, CMake) | Duarte | ✅ |
+| `test_midside` | Duarte | ✅ |
+| `wav_hist` + `scripts/plot_hist.py` + gráficos e entropias | Duarte | ✅ |
+| `wav_cmp` | Francisco | ✅ |
+| `wav_quant` + tabela de SNR (6,01 dB/bit) | Francisco | ✅ |
+| `wav_effects` (eco, ecos múltiplos, AM, atraso variável) | Francisco | ✅ |
+| `bitstream.hpp` + `test_bitstream` | Duarte | ✅ |
+| `golomb.hpp` (Rice) + `test_golomb` | Duarte | ✅ |
+| `wav_raw.hpp` (preservação byte a byte do WAV) | Duarte | ✅ |
+| Codec sem perdas (`wav_lossless_enc` / `_dec`) | Duarte | ✅ |
+| Comparação com FLAC, zstd e xz (`scripts/benchmark_lossless.sh`) | Duarte | ✅ |
+| `metrics.hpp` (MSE, L∞, SNR partilhados) | Francisco | ⬜ |
+| DCT e inversa | Francisco | ⬜ |
+| Codec com perdas (`wav_lossy_enc` / `_dec`) | Francisco | ⬜ |
+| Comparação com MP3 e AAC | Francisco | ⬜ |
+| Relatório 1 (`docs/relatorio/relatorio_trabalho.tex`) | ambos | 🟡 introdução, tecnologias e dados |
+| Relatório 2 (`docs/relatorio/relatorio_ia.tex`) | ambos | 🟡 estrutura e registo em `docs/ia_log.md` |
 
-*(O Duarte atualiza esta tabela quando os PRs entram no `main`, para evitar conflitos.)*
+### Resultados já obtidos
+
+- **Quantização:** o SNR desce 6,01 dB por bit e o MSE medido coincide com Δ²/12 (`docs/resultados/snr_quant_sample01.txt`).
+- **Codec sem perdas:** taxa média de 1,76 nos 7 ficheiros, contra 1,89 do `flac -8`, 1,21 do `xz -9` e 1,12 do `zstd -19`; saída igual ao original byte a byte (`docs/resultados/benchmark_lossless.csv`).
+
+### O que falta
+
+1. Parte III: DCT, quantização dos coeficientes, `wav_lossy_enc`/`_dec` e comparação com MP3/AAC (Francisco).
+2. `metrics.hpp` extraído do `wav_cmp`, para o SNR ser usado dentro do codec com perdas.
+3. Relatório 1: secções da Parte I, Parte II e Parte III, conclusões e manual.
+4. Relatório 2: texto a partir do `docs/ia_log.md`.
+5. Secção de contribuições dos autores, para dois elementos.
 
 ---
 
