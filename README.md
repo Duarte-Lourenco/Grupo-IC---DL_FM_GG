@@ -328,11 +328,20 @@ Resultado esperado: cada bit a menos baixa o SNR ≈ **6,02 dB**.
 | Efeito | Parâmetros | Equação (D = atraso em amostras) |
 |---|---|---|
 | `echo` | atraso_ms ganho | y[n] = x[n] + a·x[n − D] |
-| `multiecho` | atraso_ms ganho | y[n] = x[n] + a·y[n − D] (realimentação) |
+| `multiecho` | atraso_ms ganho (\|a\| < 1) | y[n] = x[n] + a·y[n − D] (realimentação) |
 | `am` | freq_hz | y[n] = x[n]·cos(2π·f·n / fs) |
-| `vdelay` | atraso_max_ms freq_hz | y[n] = x[n] + a·x[n − D(n)], D(n) varia com um seno |
+| `vdelay` | atraso_max_ms freq_hz [ganho = 0.7] | y[n] = x[n] + a·x[n − D(n)], D(n) = Dmax/2·(1 − cos(2π·f·n / fs)) |
 
-D = atraso_ms × 44100 / 1000. O resultado tem de ser limitado a −32768…32767.
+D = atraso_ms × fs / 1000. As contas são feitas em `double`; só no fim o resultado é
+arredondado e limitado a −32768…32767, e o programa mostra quantas amostras saturaram.
+No `vdelay`, D(n) não é inteiro, por isso x[n − D(n)] é obtido por interpolação linear.
+A saída tem a mesma duração do original (a cauda dos ecos é cortada), para se poder usar
+o `wav_cmp`. Exemplo: `echo` com ganho 0.5 dá SNR ≈ 6,02 dB (= 10·log₁₀(1/0,5²)).
+
+```bash
+./build/wav_effects data/sample02.wav /tmp/echo.wav echo 300 0.5
+./build/wav_effects data/sample02.wav /tmp/vd.wav vdelay 10 0.5 0.9
+```
 
 ### 5.5 `bitstream.hpp` e `golomb.hpp` (Guilherme)
 
