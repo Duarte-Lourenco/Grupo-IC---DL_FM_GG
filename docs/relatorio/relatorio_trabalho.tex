@@ -35,8 +35,7 @@
 \maketitle
 
 \begin{abstract}
-\todo{Resumo de 5--8 linhas: o que foi feito, as principais escolhas
-(linguagens, preditor, codificação entrópica, DCT) e os principais resultados
+\todo{Para este programa, foi utilizada a linguagem de programação C++ para programas e codecs, uma vez que, tanto o tempo de execução como a memória são mais eficientes. Foi também utilizada a linguagem de programação python para a visualização de gráficos e benchamrks, uma vez que não interfere no custo de desempenho. FALAR AINDA DE preditor, codificação entrópica, DCT) e os principais resultados
 (taxa de compressão face ao FLAC, SNR face ao MP3/AAC).}
 \end{abstract}
 
@@ -47,38 +46,72 @@
 \section{Introdução}
 % =====================================================================
 \subsection{Objetivos}
-\todo{Resumo dos objetivos das Partes I, II e III.}
+{O objetivo da parte I deste projeto é criar um grupo de programas que analisem, quantizem, comparem e aplicem efeitos a ficheiros de áudio WAV, através de histogramas, redução de bits, métricas de erro/SNR e efeitos sonoros como ecos e modulação de amplitude. Na parte II, foi desenvolvido  um codec de áudio lossless que comprima e descomprima ficheiros WAV exatamente, otimizando compressão, velocidade e memória, e compará-lo com codecs como FLAC, Zstd e LZMA. Na parte III foi desenvolvido um codec de áudio lossy baseado em DCT, otimizado para a melhor relação taxa-distorção, justificando experimentalmente as decisões de projeto e comparando-o com codecs MPEG em compressão, SNR, velocidade e memória}
 
 \subsection{Organização do relatório}
-\todo{Uma frase por secção.}
-
+A Secção~2 descreve a arquitetura do sistema e as escolhas tecnológicas:
+as linguagens de programação, as bibliotecas utilizadas, a organização do
+repositório e o conjunto de ficheiros de áudio usado nos testes. As Secções~3,
+4 e~5 correspondem às três partes do trabalho, as ferramentas de análise e
+manipulação de áudio, o codec sem perdas e o codec com perdas, apresentando,
+para cada uma, as decisões tomadas, a sua justificação e os resultados obtidos.
+A Secção~6 reúne as conclusões e o trabalho futuro, e a Secção~7 contém um
+manual de instalação e utilização do software.
 % =====================================================================
 \section{Arquitetura e escolhas tecnológicas}
 % =====================================================================
 \subsection{Linguagens de programação}
-\todo{Porquê C++ nos programas (desempenho, memória, avaliação do tempo de
-execução) e Python nos gráficos, na análise e nos benchmarks.}
+Os programas de processamento e os codecs operam amostra a amostra, percorrendo mais de dois milhões de amostras por ficheiro, e o seu desempenho, em tempo e em memória, é determinante quando comparados com ferramentas escritas em C, como o FLAC e o zstd. Por esse motivo foram implementados em C++, que oferece ainda o controlo ao nível do bit e do inteiro exigido pela escrita bit a bit e pelos códigos de Golomb, e integra diretamente a libsndfile. O Python foi reservado para as tarefas em que o custo computacional é irrelevante: a produção dos gráficos, com o matplotlib, os scripts de medição de desempenho e a verificação independente dos resultados através do numpy. Em síntese, C++ onde o custo é por amostra, Python onde o custo é por experiência
 
 \subsection{Bibliotecas e dependências}
 \todo{libsndfile (I/O de WAV), numpy/matplotlib, outras.}
 
 \subsection{Organização do repositório e compilação}
-\todo{Estrutura de diretórios, CMake/Makefile, módulos partilhados
-(leitura de WAV, \emph{BitStream}, codificador Golomb, métricas).}
+\subsection{Organização do repositório e compilação}
+O repositório separa a base comum, em \texttt{src/common/}, dos programas que a
+utilizam, cada um num ficheiro \texttt{src/nome.cpp}, ficando os scripts de
+visualização e de medição em \texttt{scripts/}, a documentação em \texttt{docs/}
+e os ficheiros de áudio em \texttt{data/}, estes últimos excluídos do controlo
+de versões juntamente com os artefactos de compilação. A base comum reúne os
+módulos usados por todos os programas: \texttt{wav\_io.hpp}, responsável pela
+leitura e escrita de ficheiros WAV sobre a libsndfile, e \texttt{channels.hpp},
+que implementa as transformações MID/SIDE.
+\todo{Acrescentar, quando existirem: bitstream.hpp (escrita e leitura bit a bit),
+golomb.hpp (codificação entrópica) e metrics.hpp (MSE, L-infinito e SNR,
+partilhadas pelo wav\_cmp e pelo codec com perdas).}
+
+A compilação é gerida por CMake, que deteta automaticamente os ficheiros em
+\texttt{src/} e gera um executável por programa, ligado à libsndfile através do
+\texttt{pkg-config}; acrescentar um programa não exige alterar o ficheiro de
+configuração, o que evita conflitos no trabalho em paralelo. Utiliza-se C++20,
+indispensável para garantir o comportamento do deslocamento à direita em valores
+negativos, em modo \texttt{Release} com otimização \texttt{-O2} e com os avisos
+do compilador ativos.
 
 \subsection{Conjunto de dados de teste}
-\todo{Ficheiros usados (eLearning e outros): duração, taxa de amostragem,
-n.º de canais, bits por amostra, género musical/fala. Tabela resumo.}
+Os testes foram realizados com os sete ficheiros disponibilizados no eLearning,
+resumidos na Tabela~\ref{tab:dataset}. Todos partilham o mesmo formato, o que
+isola o efeito do conteúdo nos resultados obtidos.
+\todo{Uma frase sobre a diversidade de conteúdos e, se for o caso, sobre o
+sample07 estar saturado (picos em $\pm$32767, visíveis no histograma).}
 
 \begin{table}[h]
 \centering
-\caption{Ficheiros de áudio usados nos testes.}
+\caption{Conjunto de ficheiros de áudio usado nos testes. Todos em formato WAV,
+PCM inteiro de \SI{16}{bits}, estéreo e \SI{44,1}{\kilo\hertz}.}
 \label{tab:dataset}
-\begin{tabular}{lccccl}
+\sisetup{group-separator={\,}}
+\begin{tabular}{l S[table-format=2.1] S[table-format=7.0] S[table-format=1.1] l}
 \toprule
-Ficheiro & Canais & Fs (Hz) & Bits & Duração (s) & Tipo \\
+Ficheiro & {Duração (s)} & {Amostras/canal} & {Tamanho (MiB)} \\
 \midrule
-\todo{sample01.wav} & 2 & 44100 & 16 & -- & Música \\
+\texttt{sample01.wav} & 29.3 & 1294188 & 4.9\\
+\texttt{sample02.wav} & 14.7 &  647388 & 2.5\\
+\texttt{sample03.wav} & 20.0 &  882588 & 3.4\\
+\texttt{sample04.wav} & 13.3 &  588588 & 2.2\\
+\texttt{sample05.wav} & 20.7 &  911988 & 3.5\\
+\texttt{sample06.wav} & 24.0 & 1058988 & 4.0\\
+\texttt{sample07.wav} & 21.3 &  941388 & 3.6\\
 \bottomrule
 \end{tabular}
 \end{table}
