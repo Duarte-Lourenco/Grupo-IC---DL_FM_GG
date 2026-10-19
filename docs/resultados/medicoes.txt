@@ -1,0 +1,55 @@
+===== MEDICOES PARA O RELATORIO =====
+
+[MAQUINA]
+CPU:      AMD Ryzen 7 6800H with Radeon Graphics
+Memoria:  14.9 GiB
+Sistema:  Linux 7.0.0-34-generic
+g++:      g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+cmake:    cmake version 3.28.3
+flac:     flac 1.4.3
+Nucleos:  16
+
+[POR COLECCAO - VERSAO NOVA]
+coleccao                   n  taxa_med  taxa_tot   t_enc   t_dec
+dsd100                    10    1.8485    1.7698   0.089   0.040
+sqam                      10    3.1320    2.9019   0.106   0.047
+
+[POR FICHEIRO - VERSAO NOVA]
+ficheiro                      bytes_orig  bytes_comp    taxa   t_enc   t_dec  mem_enc_k  mem_dec_k  exato
+052_mix                          5292044     3566863  1.4837   0.090   0.040       4724       4044  sim
+055_mix                          5292044     3598704  1.4705   0.090   0.050       4632       4036  sim
+062_mix                          5292044     2820124  1.8765   0.100   0.040       4688       4024  sim
+067_mix                          5292044     3054234  1.7327   0.090   0.040       4640       4020  sim
+073_mix                          5292044     3618051  1.4627   0.090   0.040       4756       4036  sim
+081_mix                          5292044     1929748  2.7423   0.090   0.040       4844       4024  sim
+087_mix                          5292044     2311448  2.2895   0.090   0.040       4752       4084  sim
+090_mix                          5292044     2632197  2.0105   0.070   0.030       4680       4044  sim
+098_mix                          5292044     3713019  1.4253   0.090   0.040       4960       4008  sim
+100_mix                          5292044     2657495  1.9914   0.090   0.040       4692       4036  sim
+sqam_07                          6174044     1168584  5.2834   0.090   0.030       4760       3996  sim
+sqam_10                         13053644     4950947  2.6366   0.210   0.100       4860       4044  sim
+sqam_14                          8643644     3629424  2.3815   0.130   0.060       4868       4044  sim
+sqam_21                          6350444     1857268  3.4192   0.080   0.030       4680       4080  sim
+sqam_35                         10407644     3662985  2.8413   0.140   0.060       4756       4028  sim
+sqam_40                          9349244     3478357  2.6878   0.140   0.060       4688       4044  sim
+sqam_44                          4939244     1796683  2.7491   0.070   0.030       4816       4032  sim
+sqam_47                          5292044     1875558  2.8216   0.080   0.040       4684       4072  sim
+sqam_49                          4057244     1225803  3.3099   0.060   0.030       4748       4036  sim
+sqam_50                          3880844     1216712  3.1896   0.060   0.030       4760       4084  sim
+
+[RESUMO - 20 FICHEIROS]
+versao        taxa_med  taxa_tot   t_enc   t_dec  mem_enc_k  mem_dec_k  exato
+antiga          2.4336    2.2416   0.209   0.075      46648      41588    sim
+NOVA            2.4903    2.2838   0.098   0.043       4960       4084    sim
+flac -8              -    2.5675   0.097   0.025       3684       3204    sim
+flac -5              -    2.5343   0.035   0.024       3716       3208    sim
+xz -9                -    2.0360   0.987   0.146     183092      14948    sim
+zstd -19             -    1.8202   0.618   0.009     103756      12360    sim
+
+[FICHEIRO GRANDE - 44.4 MiB]
+versao         taxa   t_enc  mem_enc_k  mem_dec_k  exato
+antiga       2.9938    1.54     161220     139636    sim
+nova         3.1889    0.80       4752       4008    sim
+flac -8      3.4330    0.71       3528          0    sim
+
+===== FIM =====

@@ -13,6 +13,10 @@ add_compile_options(-Wall -Wextra)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SNDFILE REQUIRED sndfile)
 
+# O wav_lossless_enc decide blocos em paralelo (std::thread).
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 # Cada ficheiro src/NOME.cpp dá origem ao programa build/NOME.
 # Não é preciso editar este ficheiro para acrescentar programas:
 # basta criar o .cpp e correr "cmake --build build".
@@ -21,5 +25,8 @@ foreach(src ${PROGRAMS})
   get_filename_component(name ${src} NAME_WE)
   add_executable(${name} ${src})
   target_include_directories(${name} PRIVATE src ${SNDFILE_INCLUDE_DIRS})
-  target_link_libraries(${name} PRIVATE ${SNDFILE_LIBRARIES})
+  target_link_directories(${name} PRIVATE ${SNDFILE_LIBRARY_DIRS})
+  # A libsndfile é ligada com --as-needed: os programas que não a usam, como o
+  # codec sem perdas, não a carregam em memória.
+  target_link_libraries(${name} PRIVATE ${SNDFILE_LIBRARIES} Threads::Threads)
 endforeach()
