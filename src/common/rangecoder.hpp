@@ -12,6 +12,7 @@
 #pragma once
 
 #include <cstdint>
+#include <istream>
 #include <stdexcept>
 #include <vector>
 
@@ -24,6 +25,10 @@ static constexpr int RC_PROB_BITS = 11;
 static constexpr int RC_ADAPT = 4;          // velocidade de adaptação (maior = mais lenta)
 static constexpr uint32_t RC_TOP = 1u << 24;
 
+// Os bytes vão para o vetor out. Os bytes que já lá estão nunca mais mudam (o
+// transporte só pode alterar os que ainda estão em cache_), por isso quem usa o
+// codificador pode escrevê-los no ficheiro e esvaziar o vetor quando quiser: a
+// memória fica limitada, qualquer que seja o tamanho do ficheiro.
 class RangeEncoder {
 public:
     explicit RangeEncoder(std::vector<uint8_t>& out) : out_(out) {}
@@ -85,9 +90,11 @@ private:
     uint64_t pending_ = 1;
 };
 
+// Lê os bytes de um fluxo (ficheiro), com um buffer de 64 KiB: a memória não
+// depende do tamanho do ficheiro comprimido.
 class RangeDecoder {
 public:
-    RangeDecoder(const uint8_t* data, std::size_t size) : p_(data), end_(data + size) {
+    explicit RangeDecoder(std::istream& in) : in_(in), buf_(64 * 1024) {
         for (int i = 0; i < 5; ++i) code_ = (code_ << 8) | nextByte();
     }
 
@@ -131,12 +138,18 @@ public:
 
 private:
     uint8_t nextByte() {
-        if (p_ == end_) throw std::runtime_error("RangeDecoder: fim de dados inesperado");
-        return *p_++;
+        if (pos_ == len_) {
+            in_.read(reinterpret_cast<char*>(buf_.data()), static_cast<std::streamsize>(buf_.size()));
+            len_ = static_cast<std::size_t>(in_.gcount());
+            pos_ = 0;
+            if (len_ == 0) throw std::runtime_error("RangeDecoder: fim de dados inesperado");
+        }
+        return buf_[pos_++];
     }
 
-    const uint8_t* p_;
-    const uint8_t* end_;
+    std::istream& in_;
+    std::vector<uint8_t> buf_;
+    std::size_t pos_ = 0, len_ = 0;
     uint32_t code_ = 0;
     uint32_t range_ = 0xFFFFFFFFu;
 };

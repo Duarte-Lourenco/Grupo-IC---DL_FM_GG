@@ -3,7 +3,7 @@
 **Documento interno do grupo. Explica tudo o que foi feito na Parte III do trabalho.**
 
 Information and Coding 2026/27 — Trabalho Prático n.º 1
-Responsável pela Parte III: Francisco Matos · Estado em 12 out 2026
+Responsável pela Parte III: Francisco Matos · Estado em 12 out 2026 · Versão eficiente em 19 out 2026 (secção 18)
 
 Este documento não é o relatório a entregar, que tem no máximo 12 páginas e não pode
 ter código. Serve para nos orientarmos e para prepararmos a discussão. Está tudo aqui:
@@ -45,6 +45,7 @@ Relatório 2 sai da secção 15.
 15. [Uso de IA nesta parte](#15-uso-de-ia-nesta-parte)
 16. [Como reproduzir tudo](#16-como-reproduzir-tudo)
 17. [Estado no Git e próximos passos](#17-estado-no-git-e-próximos-passos)
+18. [Versão eficiente: o que mudou e porquê](#18-versão-eficiente-o-que-mudou-e-porquê)
 
 ---
 
@@ -626,9 +627,16 @@ de ficheiro para ficheiro (música calma comprime mais do que ruidosa).
   no áudio por causa da ortonormalidade (4.4). O valor real final, medido depois de
   arredondar e limitar as amostras, é impresso no fim e difere em centésimas de dB.
 
-**Custo.** A bisseção faz o codificador ser mais lento do que o MP3. A 128 kbit/s
-demora 0,51 s em média, contra 0,25 s do MP3. Com `-q` são ~0,2 s no sample01. O
-descodificador não é afetado: só lê Δ do cabeçalho.
+**Custo.** A bisseção fazia o codificador ser mais lento do que o MP3: a 128 kbit/s
+demorava 0,51 s em média, contra 0,25 s do MP3. O descodificador não é afetado: só lê Δ
+do cabeçalho.
+
+> **Atualização (versão eficiente, secção 18).** A bisseção de 22 iterações sobre os
+> coeficientes guardados foi substituída por uma estimativa numa amostra de blocos e 2 a
+> 4 passagens completas pelo método da secante, sem guardar o ficheiro. A 128 kbit/s a
+> codificação demora agora 0,21 s, menos do que o MP3 (0,32 s) e o AAC (0,40 s). O débito
+> continua sempre ≤ ao alvo, agora a menos de 0,05 % dele (antes ficava exatamente no
+> alvo), o que custa em média 0,003 dB.
 
 **Precisão de Δ.** Δ é guardado no ficheiro como `float` de 32 bits. O codificador
 usa **o mesmo valor `float`** (`h.step` é `float`) quando quantiza, por isso o
@@ -732,13 +740,17 @@ inversa. Poupa tempo em silêncios e em canais S quase nulos.
 
 O resultado do codec ficou **igual** (mesmos bytes e mesmo SNR), só mudou a memória.
 
-**O que ainda ocupa memória.**
+**O que ainda ocupava memória nesta versão.**
 - Codificador: o WAV de entrada em inteiros de 32 bits (~10 MB no sample01) e os
-  coeficientes em `float` (~10 MB). Os coeficientes são necessários por causa da
-  bisseção.
+  coeficientes em `float` (~10 MB), necessários por causa da bisseção.
 - Descodificador: o WAV de saída inteiro (`WavData`) e a cópia que `writeWav` faz para
   converter para o formato da libsndfile.
-- O MP3/AAC (ffmpeg) gasta 15–17 MiB. Ver trabalho futuro.
+
+> **Atualização (versão eficiente, secção 18).** Agora nada disto fica em memória: o
+> codificador lê o WAV em fluxo (`WavReader`) e já não guarda os coeficientes, e o
+> descodificador escreve o WAV à medida (`WavWriterStream`). A memória máxima é
+> ~5,4 MiB a codificar e ~4,3 MiB a descodificar, a mesma num ficheiro de 3 MB ou de
+> 49 MB, contra ~16 MiB do ffmpeg.
 
 ---
 
@@ -751,6 +763,7 @@ O resultado do codec ficou **igual** (mesmos bytes e mesmo SNR), só mudou a mem
 | `src/common/mdct.hpp` | novo | Classe `Mdct`: janela seno, MDCT direta e inversa, DCT-IV via FFT |
 | `src/test_mdct.cpp` | novo | Testa a MDCT: igual à definição, conserva a energia, reconstrução perfeita |
 | `src/common/rangecoder.hpp` | novo | Codificador e descodificador aritmético binário adaptativo |
+| `src/common/wav_header.hpp` | novo (versão eficiente) | Cabeçalho WAV de 44 bytes, igual ao da libsndfile, para o `wav_quant` e o `wav_lossy_dec` escreverem em fluxo |
 | `src/common/lossy.hpp` | novo | Cabeçalho, análise (`analyze`), síntese (`Synth`), `quantize`, modelo de contexto (`CoefModel`), `encodeCoef`/`decodeCoef` |
 | `src/wav_lossy_enc.cpp` | novo | Codificador: opções, bisseção de Δ, escrita, SNR final |
 | `src/wav_lossy_dec.cpp` | novo | Descodificador bloco a bloco |
@@ -796,8 +809,8 @@ Exemplo:
 
 ```
 $ ./build/wav_lossy_enc -r 128 data/sample01.wav /tmp/s1.icy
-data/sample01.wav -> /tmp/s1.icy: N=2048 MID/SIDE passo=767.559  469546 bytes
-128.00 kbps  taxa 11.0:1  SNR 26.27 dB  (0.68 s)
+data/sample01.wav -> /tmp/s1.icy: N=2048 MID/SIDE passo=767.639  469516 bytes
+127.99 kbps  taxa 11.0:1  SNR 26.27 dB  (0.18 s, 2 passagens)
 ```
 
 O que se lê nesta linha:
@@ -806,7 +819,7 @@ O que se lê nesta linha:
 - o tamanho, o débito e a taxa de compressão;
 - o SNR **real** do áudio que o descodificador vai produzir (média sobre todos os
   canais);
-- o tempo de codificação.
+- o tempo de codificação e quantas passagens completas pelo ficheiro foram precisas.
 
 ### 7.3 Descodificar e medir
 
@@ -950,24 +963,28 @@ generalizam bem:
 
 | kbit/s | Codec | Débito real | Taxa | SNR (dB) | Compressão (s) | Descompressão (s) | Memória comp./desc. (MiB) |
 |---|---|---|---|---|---|---|---|
-| 32 | **Nosso** | 32,0 | 44,1 | **18,31** | 0,30 | 0,04 | 21,9 / 18,5 |
-| 32 | MP3 | 32,2 | 43,9 | 10,49 | 0,17 | 0,01 | 16,1 / 14,9 |
-| 32 | AAC | 33,1 | 42,6 | 7,64 | 0,32 | 0,01 | 16,6 / 15,8 |
-| 64 | **Nosso** | 64,0 | 22,1 | **25,11** | 0,38 | 0,04 | 21,8 / 18,6 |
-| 64 | MP3 | 64,2 | 22,0 | 15,35 | 0,22 | 0,02 | 16,1 / 14,9 |
-| 64 | AAC | 65,5 | 21,6 | 11,13 | 0,33 | 0,01 | 16,7 / 15,8 |
-| 96 | **Nosso** | 96,0 | 14,7 | **29,97** | 0,46 | 0,04 | 21,8 / 18,6 |
-| 96 | MP3 | 96,3 | 14,6 | 17,75 | 0,24 | 0,02 | 16,1 / 14,8 |
-| 96 | AAC | 97,2 | 14,5 | 14,89 | 0,33 | 0,01 | 16,7 / 15,8 |
-| 128 | **Nosso** | 128,0 | 11,0 | **33,86** | 0,51 | 0,04 | 21,9 / 18,7 |
-| 128 | MP3 | 128,4 | 11,0 | 19,72 | 0,25 | 0,02 | 16,1 / 14,9 |
-| 128 | AAC | 129,8 | 10,9 | 18,77 | 0,33 | 0,01 | 16,9 / 15,8 |
-| 192 | **Nosso** | 192,0 | 7,4 | **39,65** | 0,66 | 0,05 | 21,9 / 18,9 |
-| 192 | MP3 | 192,7 | 7,3 | 25,45 | 0,24 | 0,02 | 16,1 / 14,7 |
-| 192 | AAC | 194,2 | 7,3 | 24,26 | 0,36 | 0,01 | 17,0 / 15,8 |
-| 256 | **Nosso** | 256,0 | 5,5 | **44,44** | 0,79 | 0,06 | 21,8 / 18,9 |
-| 256 | MP3 | 256,9 | 5,5 | 32,67 | 0,25 | 0,02 | 16,2 / 14,8 |
-| 256 | AAC | 257,2 | 5,5 | 28,58 | 0,42 | 0,02 | 16,8 / 15,8 |
+| 32 | **Nosso** | 32,0 | 44,1 | **18,30** | 0,15 | 0,02 | 5,3 / 4,2 |
+| 32 | MP3 | 32,2 | 43,9 | 10,49 | 0,21 | 0,02 | 15,9 / 14,7 |
+| 32 | AAC | 33,1 | 42,6 | 7,64 | 0,40 | 0,01 | 16,6 / 15,7 |
+| 64 | **Nosso** | 64,0 | 22,1 | **25,10** | 0,16 | 0,03 | 5,3 / 4,2 |
+| 64 | MP3 | 64,2 | 22,0 | 15,35 | 0,26 | 0,02 | 16,1 / 14,7 |
+| 64 | AAC | 65,5 | 21,6 | 11,13 | 0,40 | 0,01 | 16,5 / 15,8 |
+| 96 | **Nosso** | 96,0 | 14,7 | **29,97** | 0,18 | 0,03 | 5,4 / 4,3 |
+| 96 | MP3 | 96,3 | 14,6 | 17,75 | 0,29 | 0,02 | 15,9 / 14,7 |
+| 96 | AAC | 97,2 | 14,5 | 14,89 | 0,40 | 0,02 | 16,6 / 15,7 |
+| 128 | **Nosso** | 128,0 | 11,0 | **33,85** | 0,21 | 0,03 | 5,4 / 4,2 |
+| 128 | MP3 | 128,4 | 11,0 | 19,72 | 0,32 | 0,02 | 16,0 / 14,8 |
+| 128 | AAC | 129,8 | 10,9 | 18,77 | 0,40 | 0,02 | 16,5 / 15,7 |
+| 192 | **Nosso** | 192,0 | 7,4 | **39,65** | 0,21 | 0,03 | 5,3 / 4,2 |
+| 192 | MP3 | 192,7 | 7,3 | 25,45 | 0,29 | 0,02 | 16,1 / 14,8 |
+| 192 | AAC | 194,2 | 7,3 | 24,26 | 0,43 | 0,02 | 16,6 / 15,7 |
+| 256 | **Nosso** | 255,9 | 5,5 | **44,44** | 0,30 | 0,05 | 5,3 / 4,3 |
+| 256 | MP3 | 256,9 | 5,5 | 32,67 | 0,31 | 0,02 | 15,9 / 14,7 |
+| 256 | AAC | 257,2 | 5,5 | 28,58 | 0,51 | 0,02 | 16,9 / 15,7 |
+
+Valores da versão eficiente (secção 18), medidos a 19 out 2026. Os tempos do MP3/AAC
+variam um pouco entre medições (a 12 out o MP3 deu 0,17–0,25 s); a comparação vale em
+termos relativos, medida na mesma máquina e na mesma altura.
 
 Figura: `docs/relatorio/figuras/rd_lossy.png`. Em todos os débitos, a nossa curva fica
 8–14 dB acima do MP3 e 11–16 dB acima do AAC.
@@ -1004,14 +1021,15 @@ ficar claro no relatório e na discussão.
   32 kbit/s; até +4,8 % num ficheiro, o sample07 a 128 kbit/s), o que até os favorece um
   pouco. O nosso fica exatamente no alvo.
 
-**Tempo:**
-- codificação 1,5–3× mais lenta do que o MP3, por causa da bisseção (5.6). Com `-q`
-  seria comparável;
-- descodificação mais lenta em termos relativos (0,04 s contra 0,01–0,02 s), mas
-  irrelevante em termos absolutos: ~500× mais rápido do que o tempo real.
+**Tempo (versão eficiente):**
+- codificação **mais rápida do que o MP3 e o AAC** em todos os débitos (0,21 s contra
+  0,32 e 0,40 s a 128 kbit/s), apesar da procura de Δ: 2 a 4 passagens completas, com
+  a síntese numa segunda thread;
+- descodificação de 0,02 a 0,05 s, semelhante à do ffmpeg e ~600× mais rápida do que o
+  tempo real.
 
-**Memória:** gastamos ~22/19 MiB contra ~16/15 MiB. Já baixou de 50 MiB (5.9), e
-pode-se reduzir mais (13).
+**Memória:** ~5,4 MiB a codificar e ~4,3 MiB a descodificar, cerca de **3× menos** do que
+o ffmpeg (~16/15 MiB), e independente do tamanho do ficheiro (secção 18).
 
 ---
 
@@ -1028,6 +1046,8 @@ pode-se reduzir mais (13).
 | 7 | **Débito ligeiramente acima do alvo** se a bisseção ficasse com o ponto do meio | Lógica da bisseção | No fim fica o lado que cumpre o alvo: Δ maior para `-r`, Δ menor para `-s` |
 | 8 | **Codificador e descodificador com Δ diferentes** (risco) | Δ é calculado em `double` mas guardado em `float` | O codificador guarda Δ em `float` (`h.step`) antes de quantizar, por isso os dois usam o mesmo valor |
 | 9 | **Saturação** nos picos | Possível em sinais perto do máximo (o sample07 está saturado) | `clip()` na síntese limita ao intervalo do formato antes de converter para inteiro |
+| 11 | **Memória e tempo ainda dependiam do ficheiro** (22 MiB, 252 MiB num ficheiro de 49 MB) | Pedido de eficiência máxima, depois do PR #10 do Duarte | Tudo em fluxo e procura de Δ por amostra + secante (secção 18) |
+| 12 | **Alvo impossível** (24 bits a 32 kbit/s num ficheiro de 0,7 s) | Bateria de casos-limite | O intervalo de Δ vai até 2^(bits+8) (antes 2^20 fixo, que em 24 bits passava o alvo sem avisar); se mesmo assim for impossível, fica a melhor aproximação, com aviso |
 | 10 | **SNR do codificador ≠ média do `wav_cmp`** | Diferenças de centésimas (ex.: 23,43 vs. 23,46) | Não é um erro: o codificador calcula o SNR com todos os canais juntos, e a nossa média é de dois SNR separados em dB. Explicado em 7.3 |
 
 ---
@@ -1040,7 +1060,8 @@ pode-se reduzir mais (13).
 | Arredondamento z | 0,30 | **0,40** | Experiência 9.2: +0,25 dB (64) e +0,36 dB (128) face a 0,30 com N = 2048 |
 | SNR médio a 64 kbit/s | 24,59 dB | **25,13 dB** | Os dois ajustes acima (+0,54 dB) |
 | SNR médio a 128 kbit/s | 33,45 dB | **33,89 dB** | (+0,44 dB) |
-| Memória do codificador | ~50 MiB | **21,8 MiB** | Síntese e análise bloco a bloco (5.9) |
+| Memória do codificador | ~50 MiB | **21,8 MiB** → **5,4 MiB** (versão eficiente) | Síntese e análise bloco a bloco (5.9); depois tudo em fluxo (18) |
+| Tempo de codificação a 128 kbit/s | 0,51 s | **0,21 s** (versão eficiente) | Procura de Δ por amostra + secante, síntese numa 2.ª thread (18) |
 | Síntese | Ficheiro inteiro em `double`, depois converter | Classe `Synth` com `emit`, partilhada pelo codificador e pelo descodificador | Memória, e garantir que o codificador e o descodificador fazem exatamente o mesmo |
 | SNR no codificador | Reconstruía o WAV inteiro e comparava | Compara à medida que sintetiza, com `Stats` | Memória |
 
@@ -1068,15 +1089,8 @@ Por ordem de ganho esperado:
 5. **Troca de bloco (block switching) nos ataques.** Para o SNR o ganho é pequeno, mas
    reduz o pré-eco que se ouve.
 6. **Janela KBD** em vez de seno: testar.
-7. **Codificação mais rápida.**
-   - A bisseção pode começar perto do Δ certo, estimado por uma fórmula, e precisar de
-     menos iterações.
-   - Pode estimar o débito numa amostra dos blocos e só no fim codificar tudo.
-8. **Menos memória.**
-   - O descodificador pode escrever o WAV por partes com libsndfile, em vez de guardar
-     o `WavData` inteiro.
-   - O codificador podia ler o WAV por partes se usássemos só `-q`; com `-r`/`-s`
-     precisa dos coeficientes todos.
+7. ~~**Codificação mais rápida**~~ e 8. ~~**Menos memória**~~: **feito** na versão
+   eficiente (secção 18).
 9. **Modo perceptual opcional.** Pesar o passo por banda com um modelo psicoacústico
    simples. Pioraria o SNR mas melhoraria o som. Fica fora do objetivo do enunciado.
 
@@ -1115,7 +1129,9 @@ A zona de frequência e o tamanho dos coeficientes vizinhos, no mesmo bloco e no
 anterior, que o descodificador já conhece. Ver 5.5.4.
 
 **"Como conseguem exatamente 128 kbit/s?"**
-Por bisseção em log₂ Δ, codificando de verdade em cada iteração. Ver 5.6.
+Primeiro estimamos Δ numa amostra de 48 blocos espalhados pela música; depois fazemos
+passagens completas pelo método da secante, medindo o débito exato, até ficar abaixo do
+alvo e a menos de 0,05 % dele (2 a 4 passagens). Ver 5.6 e 18.
 
 **"Porque N = 2048 e z = 0,4?"**
 Por experiência (9.1 e 9.2): são o máximo da curva nos dois débitos e estão numa zona
@@ -1130,8 +1146,9 @@ O codec sem perdas precisa de inteiros exatamente reversíveis. O codec com perd
 precisa de ortonormalidade para o erro se conservar. Ver 5.2.
 
 **"E a memória e o tempo?"**
-Ver 10.4 e 5.9: memória de 50 → 22 MiB; descodificação ~500× mais rápida do que o tempo
-real; a codificação é mais lenta por causa da bisseção.
+Ver a secção 18: tudo em fluxo, ~5 MiB qualquer que seja o tamanho do ficheiro (3×
+menos do que o ffmpeg); a codificação é mais rápida do que o MP3 e o AAC, porque a procura
+de Δ precisa de 2 a 4 passagens em vez de 22 codificações.
 
 **"Funciona com mono, 24 bits, ficheiros minúsculos?"**
 Sim, foi testado (5.8).
@@ -1208,18 +1225,120 @@ Os tempos podem variar de máquina para máquina. Os débitos e os SNR são dete
 
 ## 17. Estado no Git e próximos passos
 
-**Estado atual.**
-- Todo o trabalho está no branch local **`lossy`**, criado a partir do `origin/lossless`
-  (PR #8 do Duarte), porque usa a mesma base.
-- **Ainda não houve commit nem push.**
+**Estado atual (19 out 2026).**
+- O codec com perdas entrou no `main` pelo PR #9 (12 out).
+- A versão eficiente (secção 18) está no branch **`lossy-eficiente`**, com PR para o
+  `main`, à espera da revisão do Duarte.
+- O PR #10 do Duarte tinha apagado o `docs/ia_log.md` e o
+  `docs/parte3_codec_com_perdas.docx`; o branch `lossy-eficiente` repõe-nos a partir do
+  histórico (commit `dfeb7ce`).
 
 **Próximos passos:**
-1. Fazer merge do PR #8 (Duarte) no `main`.
-2. Fazer commit no branch `lossy`, push e abrir o PR.
-3. Escrever a secção da Parte III do Relatório 1 a partir deste documento:
-   - máximo de 12 páginas no total e sem código;
-   - figuras: `rd_lossy.png` e talvez um gráfico das experiências N/z;
-   - tabelas: 9.1, 9.2 e uma versão curta de 10.2.
-4. Completar a entrada do `ia_log.md` e a secção da Parte III no Relatório 2.
-5. Corrigir no README a autoria do `wav_effects` (foi o Guilherme).
-6. Opcional, se houver tempo antes de 25/10: os pontos 1 e 2 da secção 13.
+1. O Duarte revê e faz merge do PR da versão eficiente.
+2. Escrever a secção da Parte III do Relatório 1 a partir deste documento (máximo de
+   12 páginas no total e sem código).
+3. Completar as entradas do Francisco no `ia_log.md` e a secção da Parte III no
+   Relatório 2.
+4. Corrigir no README a autoria do `wav_effects` (foi o Guilherme).
+
+---
+
+## 18. Versão eficiente: o que mudou e porquê
+
+**Objetivo.** O enunciado avalia também o tempo e a memória. Depois de o Duarte ter
+tornado o codec sem perdas independente do tamanho do ficheiro (PR #10, `wav_stream.hpp`),
+refizemos com a mesma ideia tudo o que é do Francisco: `wav_cmp`, `wav_quant`,
+`wav_lossy_enc` e `wav_lossy_dec`. O desenho do codec (MID/SIDE, MDCT N = 2048, passo único
+com z = 0,40, codificação aritmética com contexto) **não mudou**.
+
+### 18.1 Resultados antes/depois
+
+Médias dos 7 ficheiros (`docs/resultados/lossy_antes_depois.csv`):
+
+| Codec com perdas | Antes | Depois |
+|---|---|---|
+| Memória a codificar | 22,3 MiB (até 30 MiB) | **5,4 MiB** (até 5,8 MiB) |
+| Memória a descodificar | 19,0 MiB | **4,3 MiB** |
+| Codificar a 128 kbit/s | 0,56 s | **0,21 s** (2,6× mais rápido) |
+| Descodificar a 128 kbit/s | 0,051 s | **0,033 s** |
+| SNR a 32 / 64 / 128 / 256 kbit/s | 18,31 / 25,11 / 33,86 / 44,44 dB | 18,30 / 25,10 / 33,85 / 44,44 dB |
+| Débito | exatamente no alvo | ≤ alvo, a menos de 0,05 % (pior caso −0,047 %) |
+
+A diferença de SNR é em média −0,003 dB e no pior caso −0,006 dB (medida pelo `wav_cmp`
+com 4 casas decimais), dentro da tolerância de 0,01 dB que fixámos.
+
+| Ficheiro grande (49 MB, ~5 min) | Antes | Depois |
+|---|---|---|
+| `wav_lossy_enc -r 128` | 8,29 s, 252 MB | **2,35 s, 5,5 MB** |
+| `wav_lossy_dec` | 0,74 s, 207 MB | **0,44 s, 4,3 MB** |
+| `wav_cmp` | 0,22 s, 202 MB | **0,09 s, 3,8 MB** |
+| `wav_quant -b 8` | 0,20 s, 202 MB | **0,08 s, 3,8 MB** |
+
+No `sample01`, o `wav_cmp` e o `wav_quant` passaram de ~25 MB para ~4 MB.
+
+### 18.2 O que mudou, em linguagem simples
+
+1. **Ler e escrever em fluxo, em vez de carregar o ficheiro todo.** Antes, cada programa
+   punha a música inteira na memória (como carregar um rio inteiro para regar o jardim).
+   Agora lê um bocado, trata-o e escreve-o, e passa ao seguinte (um balde de cada vez).
+   Usa o `WavReader` e o `WavWriterStream` do Duarte. Para os WAV que criamos de raiz
+   (`wav_quant`, `wav_lossy_dec`), o novo `wav_header.hpp` gera o mesmo cabeçalho de 44
+   bytes que a libsndfile escrevia, por isso a saída ficou **igual byte a byte**.
+2. **A análise MDCT passou a ser uma classe em fluxo (`Analyzer`).** Guarda só a janela
+   atual de 2N frames: a cada bloco, a metade de cima passa para baixo e leem-se N frames
+   novas. Faz exatamente as mesmas contas (incluindo o arredondamento para `float`): com
+   `-q`, o ficheiro comprimido é igual byte a byte ao da versão anterior.
+3. **Nova procura de Δ, sem guardar os coeficientes.** A bisseção antiga codificava 22
+   vezes coeficientes guardados em memória (~10 MB no `sample01`, 4 bytes por amostra).
+   Agora:
+   - uma passagem guarda só **48 blocos** (12 segmentos de 4 blocos seguidos, espalhados
+     pela música, ~0,75 MB fixos) e, com eles, uma bisseção rápida dá um Δ aproximado e a
+     inclinação "débito vs. Δ";
+   - depois fazem-se **passagens completas** (ler, MDCT, quantizar, codificar) pelo
+     **método da secante**, sempre entre o melhor Δ que cumpre o alvo e o mais próximo que
+     não cumpre, até o débito ficar ≤ alvo e a menos de 0,05 % dele. Bastam **2 a 4
+     passagens** (média 2,9);
+   - cada passagem escreve para um ficheiro temporário, que passa a ser a saída quando é a
+     melhor solução até ali, por isso não é preciso uma passagem extra no fim.
+4. **A síntese corre numa segunda thread.** Durante cada passagem (e no descodificador), a
+   MDCT inversa, a volta a L/R e a escrita ou a medida do erro correm ao mesmo tempo que a
+   análise e a codificação dos blocos seguintes. Uma fila de 4 blocos (`BlockPipe`) liga as
+   duas threads; cada uma processa os blocos sempre pela mesma ordem, por isso o resultado
+   é **determinístico** (8 corridas seguidas dão sempre os mesmos bytes).
+5. **O descodificador aritmético lê o ficheiro aos bocados** (buffer de 64 KiB) e o
+   codificador esvazia o seu buffer para o ficheiro a cada 64 KiB: os bytes já emitidos
+   nunca mais mudam, por isso podem sair logo.
+6. **Os 4 programas deixaram de carregar a libsndfile**, que arrasta outras bibliotecas
+   (FLAC, Vorbis, Opus, MP3) que não usamos.
+7. **Correção de um caso-limite.** O intervalo de procura de Δ ia até 2²⁰, o que num
+   ficheiro de 24 bits curto não chegava para descer até 32 kbit/s: a versão antiga
+   produzia 71 kbit/s sem avisar. Agora o limite é 2^(bits+8) e, se o alvo for mesmo
+   impossível (por exemplo, um ficheiro de 1 amostra), fica a melhor aproximação com aviso.
+
+### 18.3 O que tentámos e não compensou
+
+| Tentativa | Resultado | Porque não ficou |
+|---|---|---|
+| Amostra maior (12 × 8 blocos) e 20 iterações | 0,320 s em média, 2,47 passagens | Mais lento do que 12 × 4 blocos e 12 iterações (0,267 s, 2,90 passagens): a amostra maior poupa meia passagem mas custa mais a estimar |
+| Amostra mais pequena (6 × 4 blocos, 10 iterações) | 0,279 s, 3,38 passagens | A estimativa piora e são precisas mais passagens |
+| 3 passagens em paralelo por ronda (vários Δ ao mesmo tempo) | Estimado: 2 a 3 rondas contra ~2,9 passagens em série | Ganharia no máximo ~0,1 s e gastaria 3× mais processador; não foi implementado. Fazer a síntese numa 2.ª thread dava o mesmo ganho de forma mais simples (−35 % em cada passagem) |
+| Calcular o SNR final só nos coeficientes, sem síntese | Até 0,15 dB de diferença a débitos altos (falta o arredondamento para inteiros) | Preferimos anunciar o SNR real, que coincide com o do `wav_cmp` |
+
+### 18.4 Como foi verificado
+
+- Compilação de raiz sem avisos (`-Wall -Wextra`); `test_midside`, `test_bitstream`,
+  `test_golomb` e `test_mdct` dão OK.
+- `wav_quant`: 224 saídas iguais byte a byte às da versão anterior (7 ficheiros, 6 casos
+  próprios e os 15 de `scripts/gera_testes_limite.py`, com 2, 4, 8 e 12 bits, com e sem `-t`).
+- `wav_cmp`: texto igual em todos os casos, exceto a mensagem de "ficheiro não existe", que
+  era o texto da libsndfile ("System error: …") e passou a ser "Erro ao abrir …".
+- Codec com perdas:
+  - com `-q`, comprimido e descodificado iguais byte a byte à versão anterior;
+  - 112 de 112 combinações (21 ficheiros-limite e os 7 de teste, com `-r 128`, `-r 32`,
+    `-q 500` e `-s 25`) codificam e descodificam, e o SNR anunciado coincide com o do
+    `wav_cmp`;
+  - ficheiros comprimidos cortados (0, 28, 29, 1000, 469 000 bytes) ou com lixo dão mensagem
+    de erro e código de saída 1.
+- `scripts/experiments_lossy.sh` repetido: N = 2048 e z = 0,40 continuam a ser os
+  melhores, com os mesmos valores (±0,01 dB); demorou 42 s.
+- `scripts/benchmark_lossy.sh` repetido contra o MP3 e o AAC (tabela da secção 10.2).
