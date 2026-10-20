@@ -9,7 +9,7 @@
 # descodificadores do ffmpeg já retiram o atraso do codificador; o apad/atrim
 # só acerta o n.º de amostras para o wav_cmp poder comparar.
 #
-# Uso:  scripts/benchmark_lossy.sh [ficheiros.wav...]      (omisso: data/*.wav)
+# Uso:  scripts/benchmark_lossy.sh [ficheiros.wav...]      (omisso: data/Audio_Datasets/*/*.wav)
 #       FFMPEG=/caminho/ffmpeg RATES="64 128" scripts/benchmark_lossy.sh
 # Saída: results/benchmark_lossy.csv  +  tabela resumo no ecrã
 set -u
@@ -29,7 +29,11 @@ command -v "$FFMPEG" >/dev/null || { echo "ffmpeg não encontrado (sudo apt inst
 mkdir -p results
 
 FILES=("$@")
-[ ${#FILES[@]} -eq 0 ] && FILES=(data/*.wav)
+# omissão: os 20 ficheiros de treino oficiais; se não existirem, os .wav de data/
+if [ ${#FILES[@]} -eq 0 ]; then
+  FILES=(data/Audio_Datasets/*/*.wav)
+  [ -f "${FILES[0]}" ] || FILES=(data/*.wav)
+fi
 
 # corre um comando; devolve "tempo_s memoria_MiB"
 run() {

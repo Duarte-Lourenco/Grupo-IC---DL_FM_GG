@@ -98,3 +98,19 @@ Modelo:
 - **O que decidimos nós:** *(a preencher pelo Francisco)*
 - **O que alterámos:** *(a preencher pelo Francisco)*
 - **O que aprendemos:** *(a preencher pelo Francisco)*
+
+### 2026-10-19 — Francisco — Claude (Claude Code)
+**Tarefa:** versão eficiente do `wav_cmp`, do `wav_quant` e do codec com perdas (tempo e memória).
+- **Problema:** os programas carregavam os ficheiros inteiros em memória (22 MiB a codificar no codec com perdas, 252 MiB num ficheiro de 49 MB) e a procura do passo Δ codificava o ficheiro 22 vezes; o enunciado avalia também o tempo e a memória.
+- **O que a IA propôs:** ler e escrever em fluxo com o `wav_stream.hpp` do Duarte e um cabeçalho WAV igual ao da libsndfile; análise MDCT em fluxo; procura de Δ com uma amostra de blocos e passagens completas pelo método da secante; síntese numa segunda thread; descodificador aritmético com buffer.
+- **Como verificámos:**
+  - com o mesmo Δ (`-q`), o ficheiro comprimido e o WAV descodificado são iguais byte a byte aos da versão anterior;
+  - as 224 saídas do `wav_quant` e o texto do `wav_cmp` são iguais aos anteriores;
+  - 112 combinações de casos-limite codificam e descodificam, e o SNR anunciado coincide com o do `wav_cmp`;
+  - o SNR desce em média 0,003 dB (pior 0,006 dB) e o débito nunca passa o alvo;
+  - um ficheiro de 49 MB confirma que a memória não depende do tamanho;
+  - 8 corridas seguidas dão os mesmos bytes (as threads não tornam o resultado aleatório).
+- **Estava correto?** Sim, depois de uma correção: com o intervalo antigo de Δ (até 2^20), um ficheiro de 24 bits curto não atingia 32 kbit/s; o intervalo passou a depender dos bits por amostra. Uma ideia (vários Δ em paralelo) foi avaliada e rejeitada por ganhar pouco para o processador que gastava.
+- **O que decidimos nós:** *(a preencher pelo Francisco)*
+- **O que alterámos:** *(a preencher pelo Francisco)*
+- **O que aprendemos:** *(a preencher pelo Francisco)*

@@ -14,13 +14,21 @@
 //                 y = q * D + D / 2      (ponto médio)
 // Nos dois casos y fica dentro do mesmo intervalo de s, por isso nunca sai do
 // intervalo de valores do ficheiro (não é preciso limitar/saturar).
+//
+// O ficheiro é processado em fluxo, um bloco de frames de cada vez: cada amostra é
+// quantizada sozinha, por isso não é preciso ter o ficheiro todo em memória, e a
+// memória deixa de depender do tamanho do ficheiro. A saída é igual byte a byte à
+// da versão que carregava o ficheiro inteiro (ver common/wav_header.hpp).
 
-#include "common/wav_io.hpp"
+#include "common/wav_header.hpp"
+#include "common/wav_stream.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <vector>
 
 static void usage() {
     std::cerr << "Uso: wav_quant -b BITS [-t] entrada.wav saida.wav\n"
@@ -59,25 +67,39 @@ int main(int argc, char* argv[]) {
     }
 
     try {
-        WavData w = readWav(inPath);
+        WavReader in(inPath);
 
-        if (bits < 1 || bits > w.bitsPerSample) {
-            std::cerr << "Erro: BITS tem de estar entre 1 e " << w.bitsPerSample
+        if (bits < 1 || bits > in.bitsPerSample) {
+            std::cerr << "Erro: BITS tem de estar entre 1 e " << in.bitsPerSample
                       << " (bits por amostra do ficheiro)\n";
             return 1;
         }
 
-        const int d = w.bitsPerSample - bits;                        // bits descartados
+        const int d = in.bitsPerSample - bits;                       // bits descartados
         const int64_t half = (truncate || d == 0) ? 0 : (int64_t{1} << (d - 1));
 
-        for (auto& s : w.samples) {
-            const int64_t q = static_cast<int64_t>(s) >> d;          // índice do intervalo
-            s = static_cast<int32_t>((q << d) + half);               // valor reconstruído
+        const WavEnvelope env =
+            canonicalWavEnvelope(in.channels, in.sampleRate, in.bitsPerSample, in.frames);
+        WavWriterStream out(outPath, env, in.bitsPerSample);
+
+        constexpr std::size_t BLOCO = 16384;                          // frames por leitura
+        std::vector<int32_t> buf(BLOCO * static_cast<std::size_t>(in.channels));
+        uint64_t falta = in.frames;
+        while (falta > 0) {
+            const auto pedir = static_cast<std::size_t>(std::min<uint64_t>(falta, BLOCO));
+            const std::size_t n = in.readFrames(buf.data(), pedir);
+            if (n == 0) break;
+            const std::size_t amostras = n * static_cast<std::size_t>(in.channels);
+            for (std::size_t i = 0; i < amostras; ++i) {
+                const int64_t q = static_cast<int64_t>(buf[i]) >> d;  // índice do intervalo
+                buf[i] = static_cast<int32_t>((q << d) + half);       // valor reconstruído
+            }
+            out.writeSamples(buf.data(), amostras);
+            falta -= n;
         }
+        out.finish(env);
 
-        writeWav(outPath, w);
-
-        std::cout << inPath << ": " << w.bitsPerSample << " -> " << bits << " bits ("
+        std::cout << inPath << ": " << in.bitsPerSample << " -> " << bits << " bits ("
                   << (int64_t{1} << bits) << " níveis, passo " << (int64_t{1} << d) << ", "
                   << (truncate ? "truncar" : "ponto médio") << ")\n";
     } catch (const std::exception& e) {

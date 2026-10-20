@@ -41,6 +41,7 @@ Entrega: **25 out 2026** · Discussão: **26 out 2026** · Enunciado: `trab1.pdf
 | `mdct.hpp` (MDCT rápida por FFT) + `test_mdct` | Francisco | ✅ |
 | `rangecoder.hpp` (codificação aritmética adaptativa) | Francisco | ✅ |
 | Codec com perdas (`wav_lossy_enc` / `_dec`) | Francisco | ✅ |
+| Versão eficiente: tudo em fluxo (memória fixa), 2 threads, procura de Δ com amostra + secante; `wav_cmp` e `wav_quant` em fluxo | Francisco | ✅ |
 | Experiências dos parâmetros (`scripts/experiments_lossy.sh`) | Francisco | ✅ |
 | Comparação com MP3 e AAC (`scripts/benchmark_lossy.sh`, `scripts/plot_rd.py`) | Francisco | ✅ |
 | Relatório 1 (`docs/relatorio/relatorio_trabalho.tex`) | ambos | 🟡 introdução, tecnologias e dados |
@@ -49,9 +50,9 @@ Entrega: **25 out 2026** · Discussão: **26 out 2026** · Enunciado: `trab1.pdf
 ### Resultados já obtidos
 
 - **Quantização:** o SNR desce 6,01 dB por bit e o MSE medido coincide com Δ²/12 (`docs/resultados/snr_quant_sample01.txt`).
-- **Codec sem perdas:** taxa média de 1,76 nos 7 ficheiros, contra 1,89 do `flac -8`, 1,21 do `xz -9` e 1,12 do `zstd -19`; saída igual ao original byte a byte (`docs/resultados/benchmark_lossless.csv`).
-- **Codec com perdas:** ao mesmo débito, 8 a 14 dB mais SNR do que o MP3 (LAME) e 11 a 16 dB mais do que o AAC (ffmpeg) — p. ex. a 128 kbit/s, 33,9 dB contra 19,7 (MP3) e 18,8 (AAC), média dos 7 ficheiros. Descodifica 30 s de áudio em ~0,05 s, com ~22 MiB de memória máxima (`docs/resultados/benchmark_lossy.csv`, figura `docs/relatorio/figuras/rd_lossy.png`). O MP3 e o AAC otimizam o que se ouve, não o SNR, por isso esta comparação favorece-nos; isso tem de ser dito no relatório.
-- **Parâmetros do codec com perdas:** bloco N = 2048 e arredondamento z = 0,40 são os melhores a 64 e a 128 kbit/s; o MID/SIDE ganha 0,03–0,13 dB (`docs/resultados/experiments_lossy.csv`).
+- **Codec sem perdas:** nos 20 ficheiros oficiais, taxa total de 2,284, contra 2,568 do `flac -8`, 2,036 do `xz -9` e 1,820 do `zstd -19`; saída igual ao original byte a byte, ~4,9 MiB de memória (`docs/resultados/medicoes.txt`).
+- **Codec com perdas:** nos 20 ficheiros oficiais, a 128 kbit/s, SNR de 46,0 dB contra 21,6 dB do MP3 (LAME) e 25,4 dB do AAC (ffmpeg); codifica em 0,34 s (MP3: 0,46 s; AAC: 0,61 s) com ~5,4 MiB de memória (ffmpeg: ~16 MiB), qualquer que seja o tamanho do ficheiro (`docs/resultados/benchmark_lossy.csv`, figura `docs/relatorio/figuras/rd_lossy.png`). O MP3 e o AAC otimizam o que se ouve, não o SNR: esta diferença não significa melhor qualidade percebida, e isso tem de ser dito no relatório.
+- **Parâmetros do codec com perdas:** nos 20 ficheiros oficiais, bloco N = 2048 e arredondamento z = 0,40 são os melhores a 64 e a 128 kbit/s; o MID/SIDE ganha +1,4 a +1,7 dB (`docs/resultados/experiments_lossy.csv`). O que está em `docs/resultados/preliminar_samples/` foi medido nos 7 ficheiros preliminares e não deve ir para o relatório (ver `docs/resultados/LEIA-ME.md`).
 
 ### O que falta
 
@@ -78,7 +79,9 @@ Grupo-IC---DL_FM_GG/
 │   │   ├── metrics.hpp     ←   MSE, L∞ e SNR
 │   │   ├── mdct.hpp        ←   MDCT rápida (codec com perdas)
 │   │   ├── rangecoder.hpp  ←   codificador aritmético (codec com perdas)
-│   │   └── lossy.hpp       ←   partes comuns do codec com perdas
+│   │   ├── lossy.hpp       ←   partes comuns do codec com perdas
+│   │   ├── wav_stream.hpp  ←   ler/escrever WAV em fluxo (sem libsndfile)
+│   │   └── wav_header.hpp  ←   cabeçalho WAV de 44 bytes para os WAV novos
 │   ├── test_midside.cpp    ← teste da reconstrução MID/SIDE
 │   ├── wav_hist.cpp        ← (Duarte)
 │   ├── wav_cmp.cpp         ← (Francisco)
@@ -407,6 +410,12 @@ Porquê assim:
   melhor é então o mesmo passo em todos os coeficientes (sem modelo psicoacústico).
 - **Codificação aritmética e não Rice:** a maioria dos coeficientes quantizados é 0, e o
   Rice gasta pelo menos 1 bit por valor; o aritmético gasta frações de bit.
+- **Tudo em fluxo:** o codificador e o descodificador leem e escrevem um bloco de cada vez,
+  por isso a memória (~5 MiB) não depende do tamanho do ficheiro. A procura de Δ estima-o
+  numa amostra de blocos e acerta-o com 2 a 4 passagens completas pelo método da secante
+  (antes eram 22 codificações com todos os coeficientes em memória). A síntese (MDCT
+  inversa) corre numa segunda thread. O resultado é determinístico: com `-q` o ficheiro é
+  igual byte a byte ao da versão anterior.
 
 ```bash
 ./build/wav_lossy_enc -r 128 data/sample01.wav /tmp/s1.icy   # débito alvo (kbit/s)
