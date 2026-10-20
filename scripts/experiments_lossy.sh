@@ -7,7 +7,7 @@
 #   z   arredondamento / zona morta (-z)
 #   ms  MID/SIDE ligado ou não      (-l)
 #
-# Uso:  scripts/experiments_lossy.sh [ficheiros.wav...]    (omisso: data/*.wav)
+# Uso:  scripts/experiments_lossy.sh [ficheiros.wav...]    (omisso: data/Audio_Datasets/*/*.wav)
 # Saída: results/experiments_lossy.csv  +  resumo no ecrã
 set -u
 export LC_ALL=C
@@ -20,7 +20,11 @@ trap 'rm -rf "$TMP"' EXIT
 mkdir -p results
 
 FILES=("$@")
-[ ${#FILES[@]} -eq 0 ] && FILES=(data/*.wav)
+# omissão: os 20 ficheiros de treino oficiais; se não existirem, os .wav de data/
+if [ ${#FILES[@]} -eq 0 ]; then
+  FILES=(data/Audio_Datasets/*/*.wav)
+  [ -f "${FILES[0]}" ] || FILES=(data/*.wav)
+fi
 
 echo "parametro,valor,kbps,ficheiro,snr_dB" > "$OUT"
 

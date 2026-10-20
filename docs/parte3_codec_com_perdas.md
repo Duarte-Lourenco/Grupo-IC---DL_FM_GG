@@ -15,6 +15,11 @@ ter código. Serve para nos orientarmos e para prepararmos a discussão. Está t
 A partir daqui escreve-se a secção da Parte III do Relatório 1, e a entrada de IA do
 Relatório 2 sai da secção 15.
 
+> **Dados (atualizado a 20 out 2026).** Todos os números das secções 5, 9, 10 e 18 são dos
+> **20 ficheiros de treino oficiais** (10 DSD100 + 10 EBU SQAM, `data/Audio_Datasets/`). As
+> primeiras medições, nos 7 `sample0x.wav`, ficam só como histórico em
+> `docs/resultados/preliminar_samples/` e são citadas apenas quando se diz explicitamente.
+
 ---
 
 ## Índice
@@ -76,7 +81,7 @@ O que isto quer dizer em concreto:
 | Melhor relação débito-distorção | Medimos a distorção com o SNR (o critério que o enunciado usa na comparação) e otimizámos tudo para ele |
 | Decisões justificadas com experiências | `scripts/experiments_lossy.sh` (secção 9) e medições da secção 5.5 |
 | Formato de chamada | Igual ao pedido; as opções vêm antes dos ficheiros |
-| Comparar com codecs MPEG | MP3 (LAME) e AAC (ffmpeg), em 6 débitos e nos 7 ficheiros (secção 10) |
+| Comparar com codecs MPEG | MP3 (LAME) e AAC (ffmpeg), em 6 débitos e nos 20 ficheiros oficiais (secção 10) |
 | Taxa, SNR, tempo e memória | Tudo no CSV `docs/resultados/benchmark_lossy.csv` |
 
 Há também exigências gerais que valem para esta parte:
@@ -99,7 +104,7 @@ Antes de começar a Parte III, o repositório tinha:
 | `channels.hpp`: MID/SIDE inteiro, exatamente reversível | Duarte | Não foi usado diretamente; o codec com perdas usa uma versão real e ortonormal (5.2) |
 | `wav_cmp`: MSE, L∞ e SNR | Francisco | As contas passaram para `metrics.hpp` e são usadas também dentro do codificador (5.1) |
 | `wav_quant`: quantização escalar uniforme | Francisco | A mesma ideia, aplicada aos coeficientes da MDCT em vez das amostras (5.4) |
-| `bitstream.hpp` e `golomb.hpp` (Rice) | Duarte | Testados como alternativa para a codificação entrópica: ocupavam 1,9× a 3,9× mais (5.5) |
+| `bitstream.hpp` e `golomb.hpp` (Rice) | Duarte | Testados como alternativa para a codificação entrópica: ocupavam 1,6× a 6,7× mais (5.5) |
 | Codec sem perdas e `benchmark_lossless.sh` | Duarte | Serviu de modelo de estilo para o `benchmark_lossy.sh` e de referência para o tamanho (5.5) |
 | CMake que compila cada `src/*.cpp` | Duarte | Os novos programas e o `test_mdct` são compilados sem tocar no CMake |
 
@@ -112,17 +117,15 @@ Para a Parte III em si **não havia nada implementado**. Só existia o plano no 
 Contexto do grupo: a partir de outubro passámos a ser dois, e a Parte III ficou
 inteira com o Francisco.
 
-**Dados de teste:** os 7 ficheiros do eLearning, todos estéreo, 44 100 Hz, 16 bits:
+**Dados de teste.** Os resultados usam os **20 ficheiros de treino oficiais** publicados
+pelos professores no eLearning, todos WAV PCM de 16 bits, estéreo, 44,1 kHz:
+- **DSD100** (10 misturas de música: `052_mix` … `100_mix`), 30,0 s cada (1 323 000 frames);
+- **EBU SQAM / TECH 3253** (10 gravações de teste: `sqam_07` … `sqam_50`), instrumentos e
+  vozes isolados, entre 22,0 s e 74,0 s (970 200 a 3 263 400 frames).
 
-| Ficheiro | Frames | Duração | Bytes |
-|---|---|---|---|
-| sample01 | 1 294 188 | 29,3 s | 5 176 796 |
-| sample02 | 647 388 | 14,7 s | 2 589 596 |
-| sample03 | 882 588 | 20,0 s | 3 530 396 |
-| sample04 | 588 588 | 13,3 s | 2 354 396 |
-| sample05 | 911 988 | 20,7 s | 3 647 996 |
-| sample06 | 1 058 988 | 24,0 s | 4 235 996 |
-| sample07 | 941 388 | 21,3 s | 3 765 596 |
+Os professores avaliam com 10 ficheiros secretos das mesmas coleções (5 de cada). Antes de
+existirem estes dados, o trabalho foi desenvolvido com 7 ficheiros preliminares
+(`sample01` … `sample07`); essas medições estão em `docs/resultados/preliminar_samples/`.
 
 ---
 
@@ -146,7 +149,7 @@ CODIFICADOR (wav_lossy_enc)
     │  quantização uniforme com zona morta, passo Δ                 [5.4]
     │  (Δ escolhido por bisseção para o débito ou SNR pedido)        [5.6]
     ▼
- inteiros q (70–88 % são zero)
+ inteiros q (68–88 % são zero)
     │  codificador aritmético adaptativo com contexto               [5.5]
     ▼
  cabeçalho (29 bytes) + bytes do codificador aritmético              [5.7]
@@ -292,23 +295,24 @@ a 0, que custam poucos bits.
 - Com /2 (ou sem divisão) o erro de quantização em M e S seria ampliado ou reduzido de
   forma diferente ao voltar a L/R. Usar o mesmo Δ nos dois canais deixava de ser ótimo.
 
-**Medição.** O ganho é pequeno, mas o MID/SIDE nunca fica pior. Média dos 7 ficheiros:
+**Medição** (média dos 20 ficheiros oficiais):
 
 | Débito | MID/SIDE | L/R | Ganho |
 |---|---|---|---|
-| 64 kbit/s | 25,13 dB | 25,00 dB | +0,13 dB |
-| 128 kbit/s | 33,89 dB | 33,86 dB | +0,03 dB |
+| 64 kbit/s | 37,39 dB | 35,95 dB | **+1,44 dB** |
+| 128 kbit/s | 45,99 dB | 44,28 dB | **+1,71 dB** |
 
 **Decisão.** Fica ligado por omissão em estéreo. A opção `-l` desliga-o, para
-experiências.
+experiências. Só é pior do que L/R em 2 dos 40 casos (ficheiro × débito), no máximo
+por 0,22 dB.
 
-**Porque é que o ganho é tão pequeno?** Duas razões prováveis:
-- os nossos ficheiros podem ter L e R com diferenças grandes;
-- o codificador aritmético adapta-se a cada canal em separado, por isso já aproveita
-  bem um canal com pouca energia, mesmo que seja R.
-
-Um MID/SIDE escolhido **bloco a bloco** (como faz o codec sem perdas do Duarte) podia
-ganhar mais. Está no trabalho futuro (secção 13).
+**Depende muito do conteúdo.** Nos 7 ficheiros preliminares o ganho era só de
++0,03 a +0,13 dB, porque vários tinham L e R muito diferentes (no `sample02`, a
+correlação entre L e R é 0,10, quase independentes). Nas misturas de música normais
+(DSD100), L e R são parecidos e o MID/SIDE ganha bem. Escolher entre L/R e MID/SIDE por
+ficheiro ganharia ≈ +0,01 dB nos ficheiros oficiais, mas +0,34 a +0,39 dB nos
+preliminares; escolher **bloco a bloco** (como faz o codec sem perdas do Duarte) está no
+trabalho futuro (secção 13).
 
 ### 5.3 A transformada: MDCT
 
@@ -470,8 +474,8 @@ Porque é que isto ajuda:
   codecs de vídeo (H.264/HEVC usam desvios deste tipo).
 
 **Medição (secção 9).** z = 0,40 é o melhor nos dois débitos:
-- +0,33 dB a 64 kbit/s e +0,24 dB a 128 kbit/s, comparado com o arredondamento normal
-  (z = 0,5);
+- +0,35 dB a 64 kbit/s e +0,28 dB a 128 kbit/s, comparado com o arredondamento normal
+  (z = 0,5), nos 20 ficheiros oficiais;
 - abaixo de 0,35 começa a piorar, porque zera demasiados coeficientes úteis.
 
 **Reconstrução.** Usamos X̂ = q·Δ, o centro nominal do nível. Uma pequena correção
@@ -490,16 +494,17 @@ A primeira ideia era reutilizar o `golomb.hpp` do codec sem perdas. Medimos e
 descartámo-la.
 
 O motivo: depois da quantização, a **grande maioria dos coeficientes é zero**.
-Medimos com o passo que o codificador escolhe:
+Medimos nos 20 ficheiros oficiais, com o passo que dá o débito alvo
+(`docs/resultados/rice_vs_aritmetico.csv`):
 
-| Ficheiro | Débito | Coeficientes = 0 | Aritmético (nosso) | Rice, k ótimo por bloco e canal | Rice ocupa mais |
-|---|---|---|---|---|---|
-| sample01 | 64 kbit/s | 84,8 % | 234 773 B | 544 205 B | +132 % |
-| sample01 | 128 kbit/s | 70,5 % | 469 546 B | 870 768 B | +85 % |
-| sample04 | 64 kbit/s | 86,5 % | 106 772 B | 338 014 B | +217 % |
-| sample04 | 128 kbit/s | 75,2 % | 213 546 B | 604 026 B | +183 % |
-| sample06 | 64 kbit/s | 87,6 % | 192 106 B | 757 064 B | +294 % |
-| sample06 | 128 kbit/s | 79,1 % | 384 213 B | 1 486 783 B | +287 % |
+| Débito | Coleção | Coeficientes = 0 | Rice ocupa, face ao aritmético |
+|---|---|---|---|
+| 64 kbit/s | DSD100 | 84,9 % | **2,7×** (de 2,1× a 4,2×) |
+| 64 kbit/s | SQAM | 87,6 % | **4,2×** (de 2,9× a 6,7×) |
+| 128 kbit/s | DSD100 | 70,6 % | **2,1×** (de 1,6× a 3,3×) |
+| 128 kbit/s | SQAM | 75,3 % | **3,0×** (de 2,1× a 3,9×) |
+| **64 kbit/s** | **todos** | **86,2 %** | **3,5×** |
+| **128 kbit/s** | **todos** | **73,0 %** | **2,6×** |
 
 Um código de Rice gasta **no mínimo 1 bit por valor** (o 0 final do unário), mesmo que
 o valor seja 0:
@@ -508,7 +513,7 @@ o valor seja 0:
 
 O codificador aritmético gasta −log₂(p) bits por decisão. Numa zona onde o modelo já
 sabe que quase tudo é 0 (p ≈ 0,99), um zero custa ~0,015 bits. Com o mesmo Δ, o Rice
-ocupa **1,9× a 3,9×** mais do que o aritmético.
+ocupa **1,6× a 6,7×** mais do que o aritmético.
 
 (Medição feita com um programa auxiliar que quantiza com o Δ escolhido pelo
 codificador e conta os bits de Rice com o melhor k para cada bloco e canal, mais 5 bits
@@ -548,7 +553,7 @@ para guardar o k.)
 O aritmético é binário, por isso cada inteiro q é escrito como uma sequência de
 decisões sim/não:
 
-1. **É zero?** Um bit com modelo (`zero[ctx]`). Se for 0, acabou. É o caso de 70–88 %
+1. **É zero?** Um bit com modelo (`zero[ctx]`). Se for 0, acabou. É o caso de 68–88 %
    dos coeficientes.
 2. **Sinal.** Um bit direto: os positivos e os negativos são igualmente prováveis.
 3. **Magnitude em unário com modelo:** "é maior que 1?", "é maior que 2?", …, até 14.
@@ -634,7 +639,7 @@ do cabeçalho.
 > **Atualização (versão eficiente, secção 18).** A bisseção de 22 iterações sobre os
 > coeficientes guardados foi substituída por uma estimativa numa amostra de blocos e 2 a
 > 4 passagens completas pelo método da secante, sem guardar o ficheiro. A 128 kbit/s a
-> codificação demora agora 0,21 s, menos do que o MP3 (0,32 s) e o AAC (0,40 s). O débito
+> codificação demora agora 0,36 s nos ficheiros oficiais (era 1,14 s), menos do que o MP3 (0,46 s) e o AAC (0,61 s). O débito
 > continua sempre ≤ ao alvo, agora a menos de 0,05 % dele (antes ficava exatamente no
 > alvo), o que custa em média 0,003 dB.
 
@@ -731,7 +736,7 @@ inversa. Poupa tempo em silêncios e em canais S quase nulos.
 - O codificador e o descodificador usam **a mesma** classe `Synth`, por isso o SNR que o
   codificador anuncia é o que o descodificador vai produzir.
 
-**Resultado** (médias dos 7 ficheiros):
+**Resultado** (médias dos 7 ficheiros preliminares, nesta 1.ª versão):
 
 | | 1.ª versão | Versão final |
 |---|---|---|
@@ -749,7 +754,7 @@ O resultado do codec ficou **igual** (mesmos bytes e mesmo SNR), só mudou a mem
 > **Atualização (versão eficiente, secção 18).** Agora nada disto fica em memória: o
 > codificador lê o WAV em fluxo (`WavReader`) e já não guarda os coeficientes, e o
 > descodificador escreve o WAV à medida (`WavWriterStream`). A memória máxima é
-> ~5,4 MiB a codificar e ~4,3 MiB a descodificar, a mesma num ficheiro de 3 MB ou de
+> ~5,4 MiB a codificar e ~4,2 MiB a descodificar, a mesma num ficheiro de 3 MB ou de
 > 49 MB, contra ~16 MiB do ffmpeg.
 
 ---
@@ -858,6 +863,7 @@ se ouve. Vale a pena ouvir antes da discussão.
 | Ficheiros corrompidos | Ficheiro cortado aos 20 000 bytes e aos 10 bytes | Mensagem de erro e código de saída 1, sem crash |
 | Nada se partiu | Compilação limpa (0 avisos com `-Wall -Wextra`); `test_midside`, `test_bitstream`, `test_golomb`; codec sem perdas nos 7 ficheiros | Tudo OK; o codec sem perdas continua igual byte a byte |
 | `wav_cmp` igual | Mesmo par de ficheiros antes e depois de passar para `metrics.hpp` | Saída igual |
+| 20 ficheiros oficiais (DSD100 + SQAM) | Codificar a 32, 64, 128 e 256 kbit/s, descodificar e medir com o `wav_cmp` (20 out) | Todos funcionam; débito sempre ≤ alvo; o SNR anunciado coincide com o do `wav_cmp` |
 
 Para correr:
 
@@ -872,62 +878,69 @@ Para correr:
 **Método.**
 - O débito fica fixo (64 e 128 kbit/s, com `-r`) e varia-se **um parâmetro de cada
   vez**, mantendo os outros nos valores de omissão.
-- Mede-se o SNR médio nos 7 ficheiros. Com débito fixo, mais SNR significa melhor
-  relação débito-distorção.
-- Script: `scripts/experiments_lossy.sh`. Dados por ficheiro em
-  `docs/resultados/experiments_lossy.csv`.
+- Mede-se o SNR médio nos **20 ficheiros oficiais**. Com débito fixo, mais SNR significa
+  melhor relação débito-distorção.
+- Script: `scripts/experiments_lossy.sh data/Audio_Datasets/*/*.wav`. Dados por ficheiro
+  em `docs/resultados/experiments_lossy.csv`.
 
 ### 9.1 Tamanho do bloco N
 
-| N | Janela (ms) | SNR a 64 kbit/s | SNR a 128 kbit/s |
-|---|---|---|---|
-| 256 | 11,6 | 23,43 | 32,78 |
-| 512 | 23,2 | 24,20 | 33,38 |
-| 1024 | 46,4 | 24,84 | 33,81 |
-| **2048** | **92,9** | **25,13** | **33,89** |
-| 4096 | 185,8 | 24,98 | 33,57 |
-| 8192 | 371,5 | 24,52 | 32,95 |
+| N | Janela (ms) | 64 kbit/s: todos | DSD100 | SQAM | 128 kbit/s: todos | DSD100 | SQAM |
+|---|---|---|---|---|---|---|---|
+| 256 | 11,6 | 34,88 | 25,54 | 44,21 | 44,44 | 33,88 | 55,00 |
+| 512 | 23,2 | 36,13 | 25,93 | 46,32 | 45,32 | 34,16 | 56,48 |
+| 1024 | 46,4 | 37,11 | **26,26** | 47,96 | 45,96 | **34,31** | 57,61 |
+| **2048** | **92,9** | **37,39** | 26,24 | **48,55** | **45,99** | 33,99 | **57,98** |
+| 4096 | 185,8 | 36,87 | 25,67 | 48,08 | 45,31 | 33,06 | 57,57 |
+| 8192 | 371,5 | 35,83 | 24,81 | 46,85 | 44,16 | 31,84 | 56,47 |
 
 **Leitura.**
 - Até 2048, aumentar o bloco melhora a compactação de energia (melhor resolução em
-  frequência).
-- A partir daí, o sinal deixa de ser estável dentro de uma janela tão longa (notas
-  mudam, há ataques), e a energia espalha-se por mais coeficientes.
-- O máximo está em **N = 2048**, nos dois débitos.
-- A diferença entre 256 e 2048 é de **1,7 dB** a 64 kbit/s, um ganho grande.
+  frequência); a partir daí, o sinal deixa de ser estável dentro de uma janela tão longa
+  (notas mudam, há ataques) e a energia espalha-se por mais coeficientes.
+- No conjunto, o máximo está em **N = 2048**, nos dois débitos. Nas misturas DSD100,
+  N = 1024 é marginalmente melhor (+0,02 a +0,32 dB); no SQAM, N = 2048 ganha por mais.
+  Escolhemos um valor único e geral; 1024 e 2048 estão na zona plana da curva.
+- **O melhor N varia muito de ficheiro para ficheiro**: em 40 casos (20 ficheiros × 2
+  débitos), N = 1024 é o melhor em 11, N = 4096 em 11, N = 2048 em 7, N = 256 em 6. Escolher
+  o melhor N para cada ficheiro ganharia **+0,50 dB** (64 kbit/s) e **+0,64 dB** (128 kbit/s)
+  em média: é a melhoria mais promissora (secção 13).
+- Nos 7 ficheiros preliminares a conclusão era a mesma (máximo em 2048).
 
 ### 9.2 Arredondamento / zona morta z
 
-| z | SNR a 64 kbit/s | SNR a 128 kbit/s |
-|---|---|---|
-| 0,50 (arredondamento normal) | 24,80 | 33,65 |
-| 0,45 | 25,07 | 33,87 |
-| **0,40** | **25,13** | **33,89** |
-| 0,35 | 25,06 | 33,76 |
-| 0,30 | 24,88 | 33,53 |
-| 0,25 | 24,66 | 33,25 |
-| 0,20 | 24,40 | 32,94 |
+| z | 64 kbit/s: todos | DSD100 | SQAM | 128 kbit/s: todos | DSD100 | SQAM |
+|---|---|---|---|---|---|---|
+| 0,50 (arredondamento normal) | 37,04 | 25,81 | 48,28 | 45,71 | 33,75 | 57,68 |
+| 0,45 | 37,31 | 26,12 | 48,51 | 45,96 | 33,98 | 57,94 |
+| **0,40** | **37,39** | **26,24** | **48,55** | **45,99** | **33,99** | **57,98** |
+| 0,35 | 37,33 | 26,21 | 48,45 | 45,87 | 33,86 | 57,87 |
+| 0,30 | 37,17 | 26,08 | 48,26 | 45,64 | 33,63 | 57,66 |
+| 0,25 | 36,95 | 25,90 | 48,01 | 45,36 | 33,34 | 57,38 |
+| 0,20 | 36,71 | 25,69 | 47,74 | 45,04 | 33,02 | 57,06 |
 
 **Leitura.**
-- A zona morta ajuda até z = 0,40: +0,33 dB e +0,24 dB face ao arredondamento normal.
+- A zona morta ajuda até z = 0,40: +0,35 dB e +0,28 dB face ao arredondamento normal.
 - Abaixo disso, zeramos coeficientes que valia a pena manter.
-- A curva é suave e tem o máximo no mesmo ponto nos dois débitos, o que dá confiança de
-  que não é um acaso destes ficheiros.
+- O máximo está no mesmo ponto nos dois débitos **e nas duas coleções** (e também nos 7
+  ficheiros preliminares), o que dá confiança de que não é um acaso destes ficheiros.
 
 ### 9.3 MID/SIDE
 
-| Modo | SNR a 64 kbit/s | SNR a 128 kbit/s |
-|---|---|---|
-| **MID/SIDE** | **25,13** | **33,89** |
-| L/R | 25,00 | 33,86 |
+| Modo | 64 kbit/s: todos | DSD100 | SQAM | 128 kbit/s: todos | DSD100 | SQAM |
+|---|---|---|---|---|---|---|
+| **MID/SIDE** | **37,39** | **26,24** | **48,55** | **45,99** | **33,99** | **57,98** |
+| L/R | 35,95 | 25,36 | 46,54 | 44,28 | 32,95 | 55,60 |
 
-**Leitura:** ganho pequeno mas sempre positivo (explicação na 5.2).
+**Leitura:** ganho de +1,4 a +1,7 dB, nas duas coleções (explicação na 5.2).
 
 ### 9.4 Cuidado contra a especialização
 
 O enunciado avisa que o codec vai ser testado com dados privados. As escolhas
 generalizam bem:
-- N = 2048 e z = 0,40 são valores na zona plana das curvas;
+- N = 2048 e z = 0,40 são valores na zona plana das curvas e são os melhores nos dois
+  conjuntos de dados que medimos (os 7 preliminares e os 20 oficiais), em duas coleções
+  de natureza diferente (misturas de música e gravações de teste);
 - coincidem com a prática comum (blocos longos de 1024–2048 no AAC e Vorbis; desvios de
   arredondamento entre 1/3 e 1/2 em codecs de vídeo);
 - o modelo de contexto é adaptativo e aprende cada ficheiro desde o início, não traz
@@ -944,7 +957,7 @@ generalizam bem:
     `-b:a`.
   - AAC com o codificador nativo do ffmpeg 7.0.2, num contentor `.m4a`, também com
     `-b:a`.
-- **Débitos:** 32, 64, 96, 128, 192 e 256 kbit/s, nos 7 ficheiros.
+- **Débitos:** 32, 64, 96, 128, 192 e 256 kbit/s, nos **20 ficheiros oficiais**.
 - **Medições** (`scripts/benchmark_lossy.sh`):
   - tamanho, débito real e taxa de compressão;
   - SNR: média de L e R, medida com o nosso `wav_cmp`;
@@ -959,52 +972,61 @@ generalizam bem:
   cruzada (−3000…+3000 amostras) no sample01 que o atraso ótimo é **0** para o MP3 e
   para o AAC.
 
-### 10.2 Resultados médios (7 ficheiros)
+### 10.2 Resultados médios (20 ficheiros oficiais)
 
 | kbit/s | Codec | Débito real | Taxa | SNR (dB) | Compressão (s) | Descompressão (s) | Memória comp./desc. (MiB) |
 |---|---|---|---|---|---|---|---|
-| 32 | **Nosso** | 32,0 | 44,1 | **18,30** | 0,15 | 0,02 | 5,3 / 4,2 |
-| 32 | MP3 | 32,2 | 43,9 | 10,49 | 0,21 | 0,02 | 15,9 / 14,7 |
-| 32 | AAC | 33,1 | 42,6 | 7,64 | 0,40 | 0,01 | 16,6 / 15,7 |
-| 64 | **Nosso** | 64,0 | 22,1 | **25,10** | 0,16 | 0,03 | 5,3 / 4,2 |
-| 64 | MP3 | 64,2 | 22,0 | 15,35 | 0,26 | 0,02 | 16,1 / 14,7 |
-| 64 | AAC | 65,5 | 21,6 | 11,13 | 0,40 | 0,01 | 16,5 / 15,8 |
-| 96 | **Nosso** | 96,0 | 14,7 | **29,97** | 0,18 | 0,03 | 5,4 / 4,3 |
-| 96 | MP3 | 96,3 | 14,6 | 17,75 | 0,29 | 0,02 | 15,9 / 14,7 |
-| 96 | AAC | 97,2 | 14,5 | 14,89 | 0,40 | 0,02 | 16,6 / 15,7 |
-| 128 | **Nosso** | 128,0 | 11,0 | **33,85** | 0,21 | 0,03 | 5,4 / 4,2 |
-| 128 | MP3 | 128,4 | 11,0 | 19,72 | 0,32 | 0,02 | 16,0 / 14,8 |
-| 128 | AAC | 129,8 | 10,9 | 18,77 | 0,40 | 0,02 | 16,5 / 15,7 |
-| 192 | **Nosso** | 192,0 | 7,4 | **39,65** | 0,21 | 0,03 | 5,3 / 4,2 |
-| 192 | MP3 | 192,7 | 7,3 | 25,45 | 0,29 | 0,02 | 16,1 / 14,8 |
-| 192 | AAC | 194,2 | 7,3 | 24,26 | 0,43 | 0,02 | 16,6 / 15,7 |
-| 256 | **Nosso** | 255,9 | 5,5 | **44,44** | 0,30 | 0,05 | 5,3 / 4,3 |
-| 256 | MP3 | 256,9 | 5,5 | 32,67 | 0,31 | 0,02 | 15,9 / 14,7 |
-| 256 | AAC | 257,2 | 5,5 | 28,58 | 0,51 | 0,02 | 16,9 / 15,7 |
+| 32 | **Nosso** | 32,0 | 44,1 | **30,66** | 0,25 | 0,04 | 5,3 / 4,2 |
+| 32 | MP3 | 32,1 | 44,0 | 14,44 | 0,32 | 0,03 | 16,0 / 14,8 |
+| 32 | AAC | 30,3 | 46,8 | 8,14 | 0,65 | 0,02 | 16,6 / 15,7 |
+| 64 | **Nosso** | 64,0 | 22,1 | **37,38** | 0,29 | 0,04 | 5,3 / 4,3 |
+| 64 | MP3 | 64,2 | 22,0 | 17,73 | 0,41 | 0,03 | 16,0 / 14,8 |
+| 64 | AAC | 60,9 | 23,3 | 16,75 | 0,62 | 0,02 | 16,8 / 15,8 |
+| 96 | **Nosso** | 96,0 | 14,7 | **42,12** | 0,32 | 0,05 | 5,4 / 4,2 |
+| 96 | MP3 | 96,2 | 14,7 | 19,82 | 0,46 | 0,03 | 16,1 / 14,9 |
+| 96 | AAC | 90,4 | 15,7 | 20,62 | 0,61 | 0,02 | 16,7 / 15,8 |
+| 128 | **Nosso** | 128,0 | 11,0 | **45,97** | 0,34 | 0,05 | 5,4 / 4,2 |
+| 128 | MP3 | 128,3 | 11,0 | 21,64 | 0,46 | 0,03 | 16,0 / 14,8 |
+| 128 | AAC | 120,9 | 11,8 | 25,38 | 0,61 | 0,03 | 16,8 / 15,8 |
+| 192 | **Nosso** | 192,0 | 7,3 | **52,68** | 0,43 | 0,07 | 5,4 / 4,2 |
+| 192 | MP3 | 192,4 | 7,3 | 26,84 | 0,44 | 0,04 | 16,1 / 14,9 |
+| 192 | AAC | 180,5 | 7,9 | 31,38 | 0,73 | 0,03 | 16,8 / 15,8 |
+| 256 | **Nosso** | 255,9 | 5,5 | **58,92** | 0,50 | 0,08 | 5,3 / 4,2 |
+| 256 | MP3 | 256,5 | 5,5 | 37,78 | 0,47 | 0,04 | 16,1 / 14,8 |
+| 256 | AAC | 234,0 | 6,1 | 36,04 | 0,95 | 0,03 | 16,8 / 15,8 |
 
-Valores da versão eficiente (secção 18), medidos a 19 out 2026. Os tempos do MP3/AAC
-variam um pouco entre medições (a 12 out o MP3 deu 0,17–0,25 s); a comparação vale em
-termos relativos, medida na mesma máquina e na mesma altura.
+Medido a 20 out 2026, com a versão eficiente (secção 18). **Atenção ao AAC:** o
+codificador nativo do ffmpeg fica **abaixo** do débito pedido (30,3 em vez de 32, 234 em
+vez de 256 kbit/s), por isso recebe menos bits do que os outros; a comparação deve ser
+lida na figura, por débito real, e não por débito pedido.
 
 Figura: `docs/relatorio/figuras/rd_lossy.png`. Em todos os débitos, a nossa curva fica
-8–14 dB acima do MP3 e 11–16 dB acima do AAC.
+16–26 dB acima do MP3 e 20–23 dB acima do AAC (por débito pedido).
 
-### 10.3 Por ficheiro, a 128 kbit/s
+### 10.3 Por coleção e por ficheiro, a 128 kbit/s
 
-| Ficheiro | Nosso | MP3 | AAC |
+| Coleção | Nosso | MP3 | AAC |
 |---|---|---|---|
-| sample01 | 26,30 | 18,65 | 16,66 |
-| sample02 | 28,54 | 17,12 | 15,75 |
-| sample03 | 29,32 | 19,11 | 17,16 |
-| sample04 | 36,51 | 20,65 | 24,34 |
-| sample05 | 41,13 | 21,97 | 19,76 |
-| sample06 | 49,79 | 23,08 | 21,65 |
-| sample07 | 25,40 | 17,47 | 16,10 |
+| DSD100 (misturas de música) | 33,97 | 20,08 | 20,87 |
+| SQAM (gravações de teste) | 57,98 | 23,19 | 29,89 |
 
-Os ficheiros "fáceis" (sample05 e sample06) dão SNR muito alto: provavelmente têm pouca
-energia nas altas frequências ou são mais tonais. Os "difíceis" (sample01 e sample07)
-dão menos. O sample07 está saturado (visto nos histogramas da Parte I), o que costuma
-espalhar energia por todo o espetro.
+| Ficheiro | Nosso | MP3 | AAC | | Ficheiro | Nosso | MP3 | AAC |
+|---|---|---|---|---|---|---|---|---|
+| 052_mix | 25,17 | 15,57 | 16,01 | | sqam_07 | 88,41 | 26,02 | 57,91 |
+| 055_mix | 25,17 | 17,70 | 16,50 | | sqam_10 | 50,36 | 24,76 | 28,04 |
+| 062_mix | 35,62 | 22,41 | 23,50 | | sqam_14 | 57,69 | 24,75 | 33,35 |
+| 067_mix | 25,97 | 15,06 | 15,05 | | sqam_21 | 62,98 | 24,16 | 30,84 |
+| 073_mix | 28,07 | 19,83 | 17,81 | | sqam_35 | 66,02 | 22,42 | 22,75 |
+| 081_mix | 46,34 | 24,45 | 27,59 | | sqam_40 | 45,25 | 16,21 | 16,90 |
+| 087_mix | 42,13 | 22,85 | 24,18 | | sqam_44 | 54,11 | 25,04 | 30,09 |
+| 090_mix | 49,63 | 24,42 | 31,01 | | sqam_47 | 52,12 | 22,37 | 24,25 |
+| 098_mix | 26,27 | 18,92 | 17,63 | | sqam_49 | 51,23 | 21,60 | 25,43 |
+| 100_mix | 35,34 | 19,61 | 19,41 | | sqam_50 | 51,61 | 24,59 | 29,35 |
+
+As gravações SQAM são instrumentos ou vozes isolados, com muito silêncio e pouca energia
+nas altas frequências: a 128 kbit/s sobram muitos bits e o SNR é muito alto (no
+`sqam_07` chega a 88 dB). As misturas DSD100 são densas (muitos instrumentos ao mesmo
+tempo) e ficam entre 25 e 50 dB.
 
 ### 10.4 Interpretação: isto quer dizer que somos melhores que o MP3?
 
@@ -1017,18 +1039,32 @@ ficar claro no relatório e na discussão.
   distingue ruído audível de inaudível.
 - Por isso a comparação de SNR favorece-nos **por construção**. Num teste de audição a
   débitos baixos (32–64 kbit/s), o MP3/AAC provavelmente soariam melhor.
-- Os débitos de MP3/AAC ficam ligeiramente acima do pedido (AAC: +3,4 % em média a
-  32 kbit/s; até +4,8 % num ficheiro, o sample07 a 128 kbit/s), o que até os favorece um
-  pouco. O nosso fica exatamente no alvo.
+- A diferença é sistemática (16 a 26 dB, em todos os débitos e ficheiros): um SNR mais
+  alto num codificador sem modelo psicoacústico, comparado com um que tem, **não significa
+  qualidade superior**; significa que medimos uma coisa que o MP3 e o AAC sacrificam de
+  propósito. A comparação mostra que o controlo de débito atinge o alvo e que a relação
+  débito-distorção é a esperada; uma comparação de qualidade exigiria testes de audição
+  ou métricas perceptuais (PEAQ, ViSQOL), fora do âmbito do trabalho.
+- O MP3 fica no débito pedido; o AAC do ffmpeg fica 5–9 % abaixo (ver 10.2). O nosso
+  fica no alvo (a menos de 0,05 %).
+
+> **Frase para o relatório:** "A comparação de SNR com o MP3 e o AAC mostra uma diferença
+> sistemática de 16 a 26 dB a favor da nossa implementação. Essa diferença não traduz
+> superioridade perceptual: o nosso codificador minimiza o erro quadrático, enquanto o MP3
+> e o AAC distribuem o erro segundo um modelo psicoacústico, colocando-o em regiões
+> mascaradas, o que degrada o SNR deliberadamente em troca de audibilidade. A comparação
+> é apresentada como verificação de que o controlo de débito atinge o pedido e de que a
+> relação débito-distorção é monótona, não como medida de qualidade."
 
 **Tempo (versão eficiente):**
-- codificação **mais rápida do que o MP3 e o AAC** em todos os débitos (0,21 s contra
-  0,32 e 0,40 s a 128 kbit/s), apesar da procura de Δ: 2 a 4 passagens completas, com
-  a síntese numa segunda thread;
-- descodificação de 0,02 a 0,05 s, semelhante à do ffmpeg e ~600× mais rápida do que o
-  tempo real.
+- codificação mais rápida do que o MP3 até 128 kbit/s (0,34 s contra 0,46 s) e
+  equivalente acima disso (0,50 s contra 0,47 s a 256 kbit/s), e sempre mais rápida do que
+  o AAC (0,61–0,95 s), apesar da procura de Δ: 2 a 4 passagens completas, com a síntese
+  numa segunda thread;
+- descodificação de 0,04 a 0,08 s, um pouco mais lenta do que a do ffmpeg (0,02–0,04 s),
+  mas ~500× mais rápida do que o tempo real.
 
-**Memória:** ~5,4 MiB a codificar e ~4,3 MiB a descodificar, cerca de **3× menos** do que
+**Memória:** ~5,4 MiB a codificar e ~4,2 MiB a descodificar, cerca de **3× menos** do que
 o ffmpeg (~16/15 MiB), e independente do tamanho do ficheiro (secção 18).
 
 ---
@@ -1042,7 +1078,7 @@ o ffmpeg (~16/15 MiB), e independente do tamanho do ficheiro (secção 18).
 | 3 | **MP3/AAC com mais ou menos amostras** do que o original | O MP3 junta enchimento no fim; o `wav_cmp` recusa ficheiros com número de frames diferente | Filtro `apad` + `atrim` do ffmpeg para ficar com exatamente N frames |
 | 4 | **Risco de desalinhamento** no MP3/AAC | Se o atraso do codificador não fosse retirado, o SNR do MP3 seria injustamente baixo | Verificação por correlação cruzada: atraso ótimo 0, SNR igual com e sem procura de atraso (18,40 / 16,66 dB no troço testado) |
 | 5 | **Memória alta** (~50 MiB) | 1.º benchmark | Análise e síntese bloco a bloco (5.9): 21,8 / 18,7 MiB, com o mesmo resultado |
-| 6 | **Rice demasiado caro** nos coeficientes | Análise da distribuição: 70–88 % de zeros | Codificador aritmético com contexto (5.5); medição: Rice ocuparia 1,9–3,9× mais |
+| 6 | **Rice demasiado caro** nos coeficientes | Análise da distribuição: 68–88 % de zeros | Codificador aritmético com contexto (5.5); medição: Rice ocuparia 1,6–6,7× mais |
 | 7 | **Débito ligeiramente acima do alvo** se a bisseção ficasse com o ponto do meio | Lógica da bisseção | No fim fica o lado que cumpre o alvo: Δ maior para `-r`, Δ menor para `-s` |
 | 8 | **Codificador e descodificador com Δ diferentes** (risco) | Δ é calculado em `double` mas guardado em `float` | O codificador guarda Δ em `float` (`h.step`) antes de quantizar, por isso os dois usam o mesmo valor |
 | 9 | **Saturação** nos picos | Possível em sinais perto do máximo (o sample07 está saturado) | `clip()` na síntese limita ao intervalo do formato antes de converter para inteiro |
@@ -1061,7 +1097,7 @@ o ffmpeg (~16/15 MiB), e independente do tamanho do ficheiro (secção 18).
 | SNR médio a 64 kbit/s | 24,59 dB | **25,13 dB** | Os dois ajustes acima (+0,54 dB) |
 | SNR médio a 128 kbit/s | 33,45 dB | **33,89 dB** | (+0,44 dB) |
 | Memória do codificador | ~50 MiB | **21,8 MiB** → **5,4 MiB** (versão eficiente) | Síntese e análise bloco a bloco (5.9); depois tudo em fluxo (18) |
-| Tempo de codificação a 128 kbit/s | 0,51 s | **0,21 s** (versão eficiente) | Procura de Δ por amostra + secante, síntese numa 2.ª thread (18) |
+| Tempo de codificação a 128 kbit/s (20 ficheiros oficiais) | 1,14 s | **0,36 s** (versão eficiente) | Procura de Δ por amostra + secante, síntese numa 2.ª thread (18) |
 | Síntese | Ficheiro inteiro em `double`, depois converter | Classe `Synth` com `emit`, partilhada pelo codificador e pelo descodificador | Memória, e garantir que o codificador e o descodificador fazem exatamente o mesmo |
 | SNR no codificador | Reconstruía o WAV inteiro e comparava | Compara à medida que sintetiza, com `Stats` | Memória |
 
@@ -1076,6 +1112,10 @@ O que **não** mudou desde o início, porque funcionou à primeira:
 
 Por ordem de ganho esperado:
 
+0. **Escolher o N (e o MID/SIDE) para cada ficheiro**, avaliando os candidatos na amostra
+   de blocos que o codificador já guarda. Nos 20 ficheiros oficiais, escolher o melhor N
+   ganharia **+0,50 dB** (64 kbit/s) e **+0,64 dB** (128 kbit/s) em média (secção 9.1), sem
+   mudar o formato: o N já vai no cabeçalho.
 1. **MID/SIDE escolhido bloco a bloco.** Medir o custo nos dois modos para cada bloco e
    escolher o melhor (1 bit por bloco), como faz o codec sem perdas. Hoje é por
    ficheiro.
@@ -1117,8 +1157,9 @@ Com o `test_mdct`: comparação com a fórmula direta, conservação da energia 
 reconstrução perfeita sem quantização, com erros da ordem de 10⁻¹⁰ a 10⁻¹⁴.
 
 **"Porque não usaram o Golomb que já tinham?"**
-Porque 70–88 % dos coeficientes são 0 e o Rice gasta pelo menos 1 bit por valor.
-Medido: o Rice ocupava 1,9× a 3,9× mais. Ver 5.5.1.
+Porque 68–88 % dos coeficientes são 0 e o Rice gasta pelo menos 1 bit por valor.
+Medido nos 20 ficheiros oficiais: o Rice ocupava 2,6× (128 kbit/s) a 3,5× (64 kbit/s)
+mais, em média. Ver 5.5.1.
 
 **"Como funciona o codificador aritmético e porque é adaptativo?"**
 Ver 5.5.2. Adaptativo porque o descodificador aprende as mesmas probabilidades ao
@@ -1134,8 +1175,9 @@ passagens completas pelo método da secante, medindo o débito exato, até ficar
 alvo e a menos de 0,05 % dele (2 a 4 passagens). Ver 5.6 e 18.
 
 **"Porque N = 2048 e z = 0,4?"**
-Por experiência (9.1 e 9.2): são o máximo da curva nos dois débitos e estão numa zona
-plana.
+Por experiência (9.1 e 9.2): são o máximo da curva nos dois débitos, nos 20 ficheiros
+oficiais e também nos 7 preliminares, e estão numa zona plana. O melhor N varia de ficheiro
+para ficheiro; escolhê-lo por ficheiro é a primeira melhoria do trabalho futuro.
 
 **"O que é a zona morta?"**
 Ver 5.4.2: troca um pouco de erro por muitos bits nos coeficientes pequenos, e o
@@ -1253,19 +1295,22 @@ com z = 0,40, codificação aritmética com contexto) **não mudou**.
 
 ### 18.1 Resultados antes/depois
 
-Médias dos 7 ficheiros (`docs/resultados/lossy_antes_depois.csv`):
+Médias dos 20 ficheiros oficiais (`docs/resultados/lossy_antes_depois.csv`):
 
-| Codec com perdas | Antes | Depois |
+| Codec com perdas | Antes (até ao PR #11) | Depois |
 |---|---|---|
-| Memória a codificar | 22,3 MiB (até 30 MiB) | **5,4 MiB** (até 5,8 MiB) |
-| Memória a descodificar | 19,0 MiB | **4,3 MiB** |
-| Codificar a 128 kbit/s | 0,56 s | **0,21 s** (2,6× mais rápido) |
-| Descodificar a 128 kbit/s | 0,051 s | **0,033 s** |
-| SNR a 32 / 64 / 128 / 256 kbit/s | 18,31 / 25,11 / 33,86 / 44,44 dB | 18,30 / 25,10 / 33,85 / 44,44 dB |
-| Débito | exatamente no alvo | ≤ alvo, a menos de 0,05 % (pior caso −0,047 %) |
+| Memória a codificar | 34,4 MiB (até 67 MiB) | **5,4 MiB** (até 5,5 MiB) |
+| Memória a descodificar | 28,9 MiB | **4,2 MiB** |
+| Codificar a 128 kbit/s | 1,14 s | **0,36 s** (3,1× mais rápido) |
+| Descodificar a 128 kbit/s | 0,093 s | **0,059 s** |
+| SNR a 32 / 64 / 128 / 256 kbit/s | 30,66 / 37,38 / 45,98 / 58,92 dB | 30,66 / 37,38 / 45,97 / 58,92 dB |
+| Débito | exatamente no alvo | ≤ alvo, a menos de 0,05 % |
 
-A diferença de SNR é em média −0,003 dB e no pior caso −0,006 dB (medida pelo `wav_cmp`
-com 4 casas decimais), dentro da tolerância de 0,01 dB que fixámos.
+A diferença de SNR (medida pelo `wav_cmp`, com 4 casas decimais) é em média −0,002 dB.
+Em 78 dos 80 casos fica dentro de 0,01 dB; os outros 2 são a 256 kbit/s em ficheiros SQAM
+com SNR de 65 e 77 dB, onde a perda é de 0,011 e 0,016 dB (vem da tolerância de 0,05 % no
+débito; apertá-la eliminaria isto, à custa de mais passagens). Nos 7 ficheiros
+preliminares, a diferença era −0,003 dB em média e −0,006 dB no pior caso.
 
 | Ficheiro grande (49 MB, ~5 min) | Antes | Depois |
 |---|---|---|

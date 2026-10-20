@@ -50,9 +50,9 @@ Entrega: **25 out 2026** · Discussão: **26 out 2026** · Enunciado: `trab1.pdf
 ### Resultados já obtidos
 
 - **Quantização:** o SNR desce 6,01 dB por bit e o MSE medido coincide com Δ²/12 (`docs/resultados/snr_quant_sample01.txt`).
-- **Codec sem perdas:** taxa média de 1,76 nos 7 ficheiros, contra 1,89 do `flac -8`, 1,21 do `xz -9` e 1,12 do `zstd -19`; saída igual ao original byte a byte (`docs/resultados/benchmark_lossless.csv`).
-- **Codec com perdas:** ao mesmo débito, 8 a 14 dB mais SNR do que o MP3 (LAME) e 11 a 16 dB mais do que o AAC (ffmpeg) — p. ex. a 128 kbit/s, 33,9 dB contra 19,7 (MP3) e 18,8 (AAC), média dos 7 ficheiros. Codifica mais depressa do que o MP3 e o AAC (0,21 s contra 0,32 e 0,40 s a 128 kbit/s) e gasta ~5,4 MiB de memória, contra ~16 MiB do ffmpeg, qualquer que seja o tamanho do ficheiro (`docs/resultados/benchmark_lossy.csv`, figura `docs/relatorio/figuras/rd_lossy.png`; antes/depois em `docs/resultados/lossy_antes_depois.csv`). O MP3 e o AAC otimizam o que se ouve, não o SNR, por isso esta comparação favorece-nos; isso tem de ser dito no relatório.
-- **Parâmetros do codec com perdas:** bloco N = 2048 e arredondamento z = 0,40 são os melhores a 64 e a 128 kbit/s; o MID/SIDE ganha 0,03–0,13 dB (`docs/resultados/experiments_lossy.csv`).
+- **Codec sem perdas:** nos 20 ficheiros oficiais, taxa total de 2,284, contra 2,568 do `flac -8`, 2,036 do `xz -9` e 1,820 do `zstd -19`; saída igual ao original byte a byte, ~4,9 MiB de memória (`docs/resultados/medicoes.txt`).
+- **Codec com perdas:** nos 20 ficheiros oficiais, a 128 kbit/s, SNR de 46,0 dB contra 21,6 dB do MP3 (LAME) e 25,4 dB do AAC (ffmpeg); codifica em 0,34 s (MP3: 0,46 s; AAC: 0,61 s) com ~5,4 MiB de memória (ffmpeg: ~16 MiB), qualquer que seja o tamanho do ficheiro (`docs/resultados/benchmark_lossy.csv`, figura `docs/relatorio/figuras/rd_lossy.png`). O MP3 e o AAC otimizam o que se ouve, não o SNR: esta diferença não significa melhor qualidade percebida, e isso tem de ser dito no relatório.
+- **Parâmetros do codec com perdas:** nos 20 ficheiros oficiais, bloco N = 2048 e arredondamento z = 0,40 são os melhores a 64 e a 128 kbit/s; o MID/SIDE ganha +1,4 a +1,7 dB (`docs/resultados/experiments_lossy.csv`). O que está em `docs/resultados/preliminar_samples/` foi medido nos 7 ficheiros preliminares e não deve ir para o relatório (ver `docs/resultados/LEIA-ME.md`).
 
 ### O que falta
 

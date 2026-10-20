@@ -35,6 +35,7 @@ def main():
             kb[r["codec"]][k].append(float(r["kbps_real"]))
 
     fig, ax = plt.subplots(figsize=(6.4, 4.0), dpi=150)
+    fins = []
     for codec, (cor, marc, nome) in CODECS.items():
         if codec not in snr:
             continue
@@ -42,7 +43,17 @@ def main():
         x = [sum(kb[codec][k]) / len(kb[codec][k]) for k in ks]
         y = [sum(snr[codec][k]) / len(snr[codec][k]) for k in ks]
         ax.plot(x, y, color=cor, marker=marc, markersize=6, linewidth=2, label=nome)
-        ax.annotate(nome, (x[-1], y[-1]), xytext=(6, 0), textcoords="offset points",
+        fins.append([y[-1], x[-1], y[-1], nome])
+
+    # rótulos no fim de cada linha, afastados se ficarem a menos de 6 % da escala
+    lo, hi = ax.get_ylim()
+    sep = 0.06 * (hi - lo)
+    fins.sort()
+    for i in range(1, len(fins)):
+        if fins[i][2] - fins[i - 1][2] < sep:
+            fins[i][2] = fins[i - 1][2] + sep
+    for _, xf, yl, nome in fins:
+        ax.annotate(nome, (xf, yl), xytext=(6, 0), textcoords="offset points",
                     va="center", fontsize=9, color="#333333")
 
     ax.set_xlabel("Débito (kbit/s)")
