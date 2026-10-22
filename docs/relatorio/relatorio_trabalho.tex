@@ -1,291 +1,1173 @@
 % =====================================================================
 %  Information and Coding 2026/27 — Lab work n.º 1
 %  Relatório 1: descrição do trabalho (máximo 12 páginas)
-%  Nota: o enunciado proíbe código no relatório; usar diagramas,
-%  tabelas e gráficos.
+%
+%  O QUE O ENUNCIADO EXIGE (checklist, verificar antes de entregar):
+%    [ ] passos e decisões relevantes de TODOS os itens do trabalho
+%    [ ] justificação de cada escolha (linguagem, método, bloco)
+%    [ ] "why do you think they are the most appropriate" -> cada bloco
+%        tem de ter uma frase que diga porque é o mais adequado, e onde
+%        NÃO é, dizê-lo
+%    [ ] tempos de processamento ....... Partes II e III
+%    [ ] taxas de compressão ........... Partes II e III
+%    [ ] erros introduzidos ............ Partes I e III
+%    [ ] "use several audio files" ..... resultados por ficheiro ou por
+%        colecção, nunca só médias
+%    [ ] SEM código
+%    [ ] manual de utilização conciso
+%
+%  MARCADORES (remover todos antes de entregar):
+%    \todo{...}     instrução de escrita, no corpo .......... VERMELHO
+%    \todotab{...}  instrução de uma tabela (legenda) ........ VERDE
+%    \td            célula de tabela por preencher ........... VERDE
+%
+%  FONTES DOS NÚMEROS (todas em docs/resultados/):
+%    medicoes.txt ............ Parte II: taxas, tempos, memória, por
+%                              colecção, versão antiga vs nova, ficheiro
+%                              grande, flac/xz/zstd
+%    benchmark_lossy.csv ..... Parte III: nosso vs MP3 vs AAC, 6 débitos
+%    experiments_lossy.csv ... Parte III: varreduras de N, z e MID/SIDE
+%    rice_vs_aritmetico.csv .. Parte III: Rice vs aritmético
+%    lossy_antes_depois.csv .. Parte III: versão anterior vs eficiente
+%    LEIA-ME.md .............. o que cada ficheiro contém
+%  NAO usar docs/resultados/preliminar_samples/ (7 ficheiros antigos).
+%
+%  ORÇAMENTO DE PÁGINAS (12 no total):
+%    Resumo + Introdução ........ 0,75    Parte II ............ 3,00
+%    Arquitetura ................ 1,00    Parte III ........... 3,25
+%    Parte I .................... 2,25    Conclusões .......... 0,50
+%    Manual ..................................................  0,50
+%    Bibliografia (só se houver citações) ....................  0,50
+%  Se faltar espaço, cortar por esta ordem: wav_effects, manual, tabela
+%  da quantização. Nunca cortar as comparações com o estado da arte, a
+%  tabela do processamento em fluxo, nem a ressalva do SNR na Parte III.
 % =====================================================================
 \documentclass[a4paper,11pt]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[portuguese]{babel}
-\usepackage[margin=2.2cm]{geometry}
+\usepackage[margin=2cm]{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
 \usepackage{amsmath,amssymb}
 \usepackage{siunitx}
 \usepackage{xcolor}
+\usepackage{titling}
 \usepackage{subcaption}
+\captionsetup{font=small,skip=4pt}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,calc}
 \usepackage{hyperref}
+\usepackage{multirow}
 \hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black,citecolor=blue!50!black}
 
-% Marcador para texto por escrever (remover antes da entrega)
+% --- Marcadores de texto por escrever (remover todos antes da entrega) ---
+%     \todo{...}    instrucao de escrita, no corpo do texto .......... VERMELHO
+%     \todotab{...} instrucao de uma tabela (legenda) ................. VERDE
+%     \td           celula de tabela por preencher .................... VERDE
+\definecolor{todoverde}{RGB}{0,115,55}
 \newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO:} #1\textbf{]}}}
+\newcommand{\todotab}[1]{\textcolor{todoverde}{\textbf{[TODO:} #1\textbf{]}}}
+\newcommand{\td}{\textcolor{todoverde}{\textbf{?}}}   % célula de tabela por preencher
+
 \newcommand{\prog}[1]{\texttt{#1}}
+\sisetup{group-separator={\,},output-decimal-marker={,}}
+% --- colocação de floats: evita páginas meio vazias ---
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.06}
+\renewcommand{\floatpagefraction}{0.75}
+\setlength{\textfloatsep}{10pt plus 3pt minus 3pt}
+\setlength{\intextsep}{10pt plus 3pt minus 3pt}
+\emergencystretch=1.5em  % evita linhas a sair da margem
 
 \title{Information and Coding --- Trabalho Prático n.º 1\\[4pt]
 \large Relatório 1: Ferramentas de áudio e codecs com e sem perdas}
 \author{%
-  Nome Apelido 1 (n.º mec.~XXXXX) \and
-  Nome Apelido 2 (n.º mec.~XXXXX) \and
-  Nome Apelido 3 (n.º mec.~XXXXX)}
+  Duarte Lourenço (n.º mec.~114421) \and
+  Francisco Matos (n.º mec.~113726)}
+
 \date{Universidade de Aveiro --- DETI\\ Outubro de 2026}
 
 \begin{document}
+\setlength{\droptitle}{-2.2cm}
 \maketitle
+\renewcommand{\thefootnote}{}%
+\footnotetext{Contribuição dos autores, \SI{50}{\percent} Duarte Lourenço e \SI{50}{\percent} Francisco Matos.}%
+\renewcommand{\thefootnote}{\arabic{footnote}}
 
 \begin{abstract}
-\todo{Para este programa, foi utilizada a linguagem de programação C++ para programas e codecs, uma vez que, tanto o tempo de execução como a memória são mais eficientes. Foi também utilizada a linguagem de programação python para a visualização de gráficos e benchamrks, uma vez que não interfere no custo de desempenho. FALAR AINDA DE preditor, codificação entrópica, DCT) e os principais resultados
-(taxa de compressão face ao FLAC, SNR face ao MP3/AAC).}
+Este relatório descreve as quatro ferramentas de análise e manipulação de áudio
+da Parte~I, um codec sem perdas e um codec com perdas baseado na MDCT. Nos 20
+ficheiros de treino o codec sem perdas obtém uma taxa de compressão total de
+\num{2,28}, contra \num{2,57} do \prog{flac -8}, com o mesmo tempo de
+codificação, \SI{4,8}{MiB} de memória que não dependem da duração do áudio e
+saída igual ao original byte a byte. O codec com perdas obtém
+\SI{45,97}{\decibel} de SNR médio a \SI{128}{\kilo\bit\per\second}, contra
+\SI{21,64}{\decibel} do MP3 e \SI{25,38}{\decibel} do AAC, diferença que o SNR
+favorece por construção, por ser a grandeza que o nosso codec minimiza. Como a
+avaliação final corre num conjunto cego, nenhum parâmetro do codec sem perdas é
+fixado à mão, e os dois parâmetros fixos do codec com perdas foram escolhidos em
+zonas planas da curva de desempenho.
 \end{abstract}
 
-\tableofcontents
-% (Remover o índice se for preciso poupar espaço para caber nas 12 páginas)
+% O índice ocupa cerca de uma página. Com 12 páginas no total e sete secções,
+% não compensa; descomentar só se sobrar espaço.
+% \tableofcontents
 
 % =====================================================================
 \section{Introdução}
+\label{sec:intro}
 % =====================================================================
-\subsection{Objetivos}
-{O objetivo da parte I deste projeto é criar um grupo de programas que analisem, quantizem, comparem e aplicem efeitos a ficheiros de áudio WAV, através de histogramas, redução de bits, métricas de erro/SNR e efeitos sonoros como ecos e modulação de amplitude. Na parte II, foi desenvolvido  um codec de áudio lossless que comprima e descomprima ficheiros WAV exatamente, otimizando compressão, velocidade e memória, e compará-lo com codecs como FLAC, Zstd e LZMA. Na parte III foi desenvolvido um codec de áudio lossy baseado em DCT, otimizado para a melhor relação taxa-distorção, justificando experimentalmente as decisões de projeto e comparando-o com codecs MPEG em compressão, SNR, velocidade e memória}
+O trabalho divide-se em três partes. A primeira constrói quatro ferramentas de
+análise e manipulação de áudio, que geram histogramas dos canais de um ficheiro
+WAV, reduzem o número de bits usados em cada amostra, medem a diferença entre
+uma versão processada e o original, e aplicam efeitos ao sinal. A segunda
+desenvolve um codec sem perdas com o melhor desempenho possível em taxa de
+compressão, tempo e memória, com reconstrução exata do original e comparação com
+o estado da arte especializado (\prog{flac}) e de uso geral (\prog{zstd},
+\prog{xz}). A terceira desenvolve um codec com perdas com o melhor compromisso
+entre débito e distorção, obrigatoriamente baseado na DCT, que é a única
+restrição imposta pelo enunciado, comparado com o MP3 e o AAC.
 
-\subsection{Organização do relatório}
-A Secção~2 descreve a arquitetura do sistema e as escolhas tecnológicas:
-as linguagens de programação, as bibliotecas utilizadas, a organização do
-repositório e o conjunto de ficheiros de áudio usado nos testes. As Secções~3,
-4 e~5 correspondem às três partes do trabalho, as ferramentas de análise e
-manipulação de áudio, o codec sem perdas e o codec com perdas, apresentando,
-para cada uma, as decisões tomadas, a sua justificação e os resultados obtidos.
-A Secção~6 reúne as conclusões e o trabalho futuro, e a Secção~7 contém um
-manual de instalação e utilização do software.
+Nos 20 ficheiros de treino o codec sem perdas obtém uma taxa de compressão total
+de \num{2,28} contra \num{2,57} do \prog{flac -8}, fica a par dele no tempo de
+codificação, usa \SI{4,8}{MiB} de memória independentemente do tamanho do
+ficheiro e reproduz o original byte a byte. O codec com perdas obtém entre 34 e
+\SI{58}{\decibel} de SNR a \SI{128}{\kilo\bit\per\second}, conforme a coleção,
+mas como o SNR mede o erro quadrático, que é a grandeza minimizada pelo codec, a
+comparação com o MP3 e o AAC avalia objetivos distintos e não permite concluir
+qual apresenta melhor qualidade sonora.
+
+A avaliação final corre num conjunto cego de dez faixas, cinco de cada coleção,
+o que motivou uma decisão de fundo. Nenhum parâmetro do codec sem perdas é
+fixado manualmente, porque o modo de canais, a ordem do preditor e o número de
+partições de Rice são determinados em cada bloco pela minimização do custo em
+bits. O relatório segue a ordem do trabalho, com a Secção~\ref{sec:arquitetura}
+nas escolhas tecnológicas e na metodologia de medição, a
+Secção~\ref{sec:parte1} nas ferramentas da Parte~I, as Secções~\ref{sec:parte2}
+e~\ref{sec:parte3} nos dois codecs, e as Secções~\ref{sec:conclusoes}
+e~\ref{sec:manual} nas conclusões e no manual de utilização.
+
 % =====================================================================
 \section{Arquitetura e escolhas tecnológicas}
+\label{sec:arquitetura}
 % =====================================================================
-\subsection{Linguagens de programação}
-Os programas de processamento e os codecs operam amostra a amostra, percorrendo mais de dois milhões de amostras por ficheiro, e o seu desempenho, em tempo e em memória, é determinante quando comparados com ferramentas escritas em C, como o FLAC e o zstd. Por esse motivo foram implementados em C++, que oferece ainda o controlo ao nível do bit e do inteiro exigido pela escrita bit a bit e pelos códigos de Golomb, e integra diretamente a libsndfile. O Python foi reservado para as tarefas em que o custo computacional é irrelevante: a produção dos gráficos, com o matplotlib, os scripts de medição de desempenho e a verificação independente dos resultados através do numpy. Em síntese, C++ onde o custo é por amostra, Python onde o custo é por experiência
+\subsection{Linguagens, bibliotecas e compilação}
+Cada ficheiro de teste contém milhões de amostras por canal, e o codificador sem
+perdas avalia em cada bloco dois modos de canais, quatro ordens de preditor e
+vários números de partições, o que resulta em dezenas de passagens sobre as
+mesmas amostras. Foi essa carga que ditou o uso de C++ no processamento. Mesmo
+na tarefa mais leve do trabalho, o histograma, são \SI{0,093}{\second} de CPU em
+C++ contra \SI{0,226}{\second} em Python puro e \SI{0,096}{\second} com a
+biblioteca \prog{numpy}, e no codificador a diferença acentua-se, porque as
+decisões de cada bloco são sequenciais e não se vetorizam. A segunda razão é o
+controlo da representação ao nível do bit, que em Python não existe, por os
+inteiros terem precisão arbitrária e não haver um tipo de 32 bits com largura
+garantida. A norma usada é o C++20, que garante que o deslocamento à direita de
+um inteiro negativo é aritmético, condição necessária para o codificador e o
+descodificador aplicarem a mesma convenção de divisão inteira.
 
-\subsection{Bibliotecas e dependências}
-\todo{libsndfile (I/O de WAV), numpy/matplotlib, outras.}
+O Python é usado nos gráficos, nas varreduras de parâmetros e no recálculo das
+métricas em \prog{numpy}, que é uma implementação independente e, por chegar aos
+mesmos valores, reforça a confiança nos números apresentados. A compilação usa
+CMake, que fixa a norma C++20 e compila em \texttt{Release} com \texttt{-O2} e
+avisos ativos, e foi verificada a partir de um clone limpo numa máquina
+diferente da de desenvolvimento, sem erros nem avisos, o que importa porque a
+avaliação é automática e corre noutro sistema.
 
-\subsection{Organização do repositório e compilação}
-\subsection{Organização do repositório e compilação}
-O repositório separa a base comum, em \texttt{src/common/}, dos programas que a
-utilizam, cada um num ficheiro \texttt{src/nome.cpp}, ficando os scripts de
-visualização e de medição em \texttt{scripts/}, a documentação em \texttt{docs/}
-e os ficheiros de áudio em \texttt{data/}, estes últimos excluídos do controlo
-de versões juntamente com os artefactos de compilação. A base comum reúne os
-módulos usados por todos os programas: \texttt{wav\_io.hpp}, responsável pela
-leitura e escrita de ficheiros WAV sobre a libsndfile, e \texttt{channels.hpp},
-que implementa as transformações MID/SIDE.
-\todo{Acrescentar, quando existirem: bitstream.hpp (escrita e leitura bit a bit),
-golomb.hpp (codificação entrópica) e metrics.hpp (MSE, L-infinito e SNR,
-partilhadas pelo wav\_cmp e pelo codec com perdas).}
-
-A compilação é gerida por CMake, que deteta automaticamente os ficheiros em
-\texttt{src/} e gera um executável por programa, ligado à libsndfile através do
-\texttt{pkg-config}; acrescentar um programa não exige alterar o ficheiro de
-configuração, o que evita conflitos no trabalho em paralelo. Utiliza-se C++20,
-indispensável para garantir o comportamento do deslocamento à direita em valores
-negativos, em modo \texttt{Release} com otimização \texttt{-O2} e com os avisos
-do compilador ativos.
+A \texttt{libsndfile} é usada apenas pelo \prog{wav\_hist} e pelo
+\prog{wav\_effects}. Os restantes programas, incluindo os dois codecs, leem e
+escrevem WAV com código próprio, e a razão é a memória, que é critério de
+avaliação, porque a biblioteca carrega libFLAC, libvorbis, libopus e libmpg123
+no processo sem que nenhuma seja necessária para ler um WAV. O leitor próprio
+foi validado contra ela em 14 ficheiros de 8, 16, 24 e \num{32}~bits, com
+ficheiro comprimido bit a bit igual. O código está em
+\url{https://github.com/Duarte-Lourenco/Grupo-IC---DL_FM_GG}, onde o
+\texttt{README} descreve a estrutura do repositório.
 
 \subsection{Conjunto de dados de teste}
-Os testes foram realizados com os sete ficheiros disponibilizados no eLearning,
-resumidos na Tabela~\ref{tab:dataset}. Todos partilham o mesmo formato, o que
-isola o efeito do conteúdo nos resultados obtidos.
-\todo{Uma frase sobre a diversidade de conteúdos e, se for o caso, sobre o
-sample07 estar saturado (picos em $\pm$32767, visíveis no histograma).}
+\label{sec:dados}
+O conjunto de treino são 20 faixas, 10 do DSD100, mixagens densas de banda
+larga, com \SI{300}{\second} e \SI{50,47}{MiB}, e 10 do EBU SQAM, material
+crítico com instrumentos solo, voz e sinais de teste, com \SI{409}{\second} e
+\SI{68,81}{MiB}, o que perfaz \SI{709}{\second} e \SI{119,27}{MiB}. Todas em
+WAV PCM de \num{16}~bits, estéreo, \SI{44,1}{\kilo\hertz}, normalizadas pela
+equipa docente, com cabeçalho canónico de \num{44}~bytes e sem blocos de
+metadados.
+ 
+A avaliação final corre num conjunto cego de 10 faixas, 5 de cada coleção, o que
+exclui afinar parâmetros ao conjunto de treino. As duas coleções têm
+compressibilidade muito diferente, pelo que os resultados deste relatório são
+dados também por coleção e não apenas em média.
+ 
 
-\begin{table}[h]
-\centering
-\caption{Conjunto de ficheiros de áudio usado nos testes. Todos em formato WAV,
-PCM inteiro de \SI{16}{bits}, estéreo e \SI{44,1}{\kilo\hertz}.}
-\label{tab:dataset}
-\sisetup{group-separator={\,}}
-\begin{tabular}{l S[table-format=2.1] S[table-format=7.0] S[table-format=1.1] l}
-\toprule
-Ficheiro & {Duração (s)} & {Amostras/canal} & {Tamanho (MiB)} \\
-\midrule
-\texttt{sample01.wav} & 29.3 & 1294188 & 4.9\\
-\texttt{sample02.wav} & 14.7 &  647388 & 2.5\\
-\texttt{sample03.wav} & 20.0 &  882588 & 3.4\\
-\texttt{sample04.wav} & 13.3 &  588588 & 2.2\\
-\texttt{sample05.wav} & 20.7 &  911988 & 3.5\\
-\texttt{sample06.wav} & 24.0 & 1058988 & 4.0\\
-\texttt{sample07.wav} & 21.3 &  941388 & 3.6\\
-\bottomrule
-\end{tabular}
-\end{table}
+\subsection{Metodologia de medição e verificação}
+\label{sec:metodo}
+Todas as medições foram feitas na mesma máquina e na mesma sessão: AMD Ryzen~7
+6800H com 16 núcleos lógicos, \SI{14,9}{GiB} de RAM, Linux 7.0.0, g++ 13.3.0 e
+CMake 3.28.3, com os programas compilados em \texttt{Release} com \texttt{-O2};
+as comparações usam \prog{flac} 1.4.3. Os tempos e o pico de memória vêm do melhor de três execuções.
+
+O \emph{governor} do CPU foi fixado em \texttt{performance}.
+Em \texttt{powersave} o processador corria a \SIrange{1,1}{1,36}{\giga\hertz} e
+uma ronda inteira de medições chegou a inverter a conclusão sobre qual das
+versões do codec era mais rápida.
+
+As taxas de compressão aparecem em duas convenções. A taxa \emph{total} é a soma
+dos tamanhos originais a dividir pela soma dos comprimidos e a taxa \emph{média} é
+a média aritmética das taxas de cada ficheiro. No nosso codec dão 2,28 e 2,49, e
+a divergência vem de as taxas por ficheiro variarem entre 1,42 e 5,28 e de os
+ficheiros terem entre \SI{3,7}{MiB} e \SI{12,5}{MiB}. A média dá o mesmo peso a
+todos, a total pesa cada um pelo seu tamanho. Salvo indicação em contrário, as
+tabelas deste relatório usam a taxa total, e as que apresentam as duas
+identificam-nas.
+
+A verificação dos resultados assenta em quatro caminhos independentes. O
+primeiro é a reconstrução de ida e volta validada com \prog{cmp}, que exige
+igualdade byte a byte e não apenas igualdade das amostras. O segundo é o
+recálculo dos histogramas, das entropias e das métricas de erro em \prog{numpy},
+que constitui uma segunda implementação, independente da primeira. O terceiro
+são os testes unitários \prog{test\_midside}, \prog{test\_bitstream},
+\prog{test\_golomb} e \prog{test\_mdct}, que verificam propriedades
+(reversibilidade da transformação MID/SIDE, ida e volta do mapeamento zigzag,
+conservação de energia na MDCT) em vez de valores tabelados, pelo que
+permanecem válidos para qualquer entrada. O quarto é uma bateria de 25
+casos-limite do codec sem perdas, que cobre ficheiros mono e de 8, 16, 24 e
+\num{32}~bits, ficheiros de 1, 2 e 5 \emph{frames}, bloco \texttt{data} com
+número ímpar de bytes, contentores com metadados, cabeçalhos que declaram mais
+dados do que existem, blocos de 16 a \num{65535} amostras, silêncio total,
+canais idênticos, um canal em silêncio, tom puro e onda saturada, bem como a
+recusa de ficheiros comprimidos truncados ou aleatórios. Os 25 casos passam.
+
+O \prog{wav\_cmp} e os dois codecs calculam o erro com o mesmo código, pelo que
+os valores apresentados nas três partes são comparáveis entre si.
 
 % =====================================================================
 \section{Parte I --- Ferramentas de processamento de áudio}
+\label{sec:parte1}
 % =====================================================================
-\subsection{\prog{wav\_hist}: histogramas}
-\subsubsection{Histograma por canal}
-\todo{Método e exemplo de gráfico (L e R).}
-\subsubsection{Canais MID e SIDE}
-\todo{Definição com divisão inteira; convenção de arredondamento adotada.}
-\subsubsection{Reconstrução exata de L e R a partir de MID e SIDE}
-\todo{Resposta à pergunta da nota de rodapé 2 do enunciado.}
-\subsubsection{Bins mais grosseiros ($2^k$ valores)}
-\todo{Implementação e comparação visual para vários $k$.}
-\subsubsection{Análise dos resultados}
-\todo{O que os histogramas mostram (distribuição de L/R vs.\ SIDE, entropia)
-e a relação com a codificação das Partes II e III.}
 
-\subsection{\prog{wav\_quant}: quantização escalar uniforme}
-\todo{Método (redução de bits, arredondamento vs.\ truncatura), formato de saída.}
+\subsection{\prog{wav\_hist}: histogramas e análise}
+\label{sec:hist}
+O \prog{wav\_hist} conta as ocorrências de cada valor e escreve um CSV; o
+gráfico é feito em Python, pelo critério da Secção~\ref{sec:arquitetura}.
+Analisam-se quatro canais: L, R, $\mathrm{MID} = \lfloor (L+R)/2 \rfloor$ e a
+diferença média $(L-R)/2$, que é a pedida no enunciado e não coincide com o SIDE
+do codec da Secção~\ref{sec:parte2}, que é $L-R$.
 
-\subsection{\prog{wav\_cmp}: métricas de erro}
-\subsubsection{Métricas implementadas}
-\todo{Definições de $L^2$ (MSE), $L^\infty$ e SNR, por canal e para a média.}
-\begin{equation}
-  \mathrm{SNR} = 10\log_{10}\frac{\sum_n x[n]^2}{\sum_n \left(x[n]-\tilde{x}[n]\right)^2}\ \text{dB}
-\end{equation}
-\subsubsection{Resultados da quantização}
-\todo{Tabela/gráfico: SNR e $L^\infty$ em função do n.º de bits
-(p.\,ex.\ 16, 12, 8, 6, 4, 2). Comparar com o valor teórico de $\approx$\,6{,}02\,dB/bit.}
+As contagens podem ser agrupadas em \emph{bins} de $2^k$ valores por truncagem
+dos $k$ bits baixos; a Tabela~\ref{tab:entropia} usa $k=0$, porque agrupar
+símbolos reduz a entropia, e a Figura~\ref{fig:hist} usa $k=8$. A divisão por
+dois é inteira, mas a reconstrução continua exata: $L+R$ e $L-R$ têm a mesma
+paridade, pelo que $L+R = 2\,\mathrm{MID} + (\mathrm{SIDE} \mathbin{\&} 1)$.
+Isto responde à nota de rodapé~2 do enunciado e foi verificado em milhares de
+pares $(L,R)$ e em todas as amostras dos ficheiros de teste.
 
-\subsection{\prog{wav\_effects}: efeitos de áudio}
-\subsubsection{Eco simples e ecos múltiplos}
-\todo{Equações às diferenças e parâmetros.}
-\subsubsection{Modulação de amplitude}
-\todo{}
-\subsubsection{Atrasos variáveis no tempo}
-\todo{}
-\subsubsection{Outros efeitos}
-\todo{Opcional.}
+As distribuições têm pico em zero e decaimento aproximadamente exponencial,
+forma que fundamenta a escolha de Golomb/Rice na Secção~\ref{sec:rice}. A
+diferença média tem sempre menor desvio padrão do que L e R, com margens de
+\num{1,6} a \num{129} vezes conforme o material, e a transformação poupa
+\num{1,59} bits por \emph{frame} no DSD100 e \num{2,26} no SQAM. O par MID/SIDE
+sai mais barato nos 20 ficheiros, sem exceção; ainda assim o modo é decidido por
+bloco, porque a entropia por ficheiro é uma média que não distingue os trechos
+em que os canais divergem.
 
-% =====================================================================
-\section{Parte II --- Codec de áudio sem perdas}
-% =====================================================================
-\subsection{Visão geral e diagrama de blocos}
-\todo{Figura com o diagrama de blocos do codificador e do descodificador.}
+Estas entropias são de ordem zero e tratam cada amostra como independente das
+anteriores, pelo que não veem a correlação temporal. Embaralhar o ficheiro não
+altera o histograma, mas destrói a compressibilidade. A última coluna da
+Tabela~\ref{tab:entropia} permitiria \num{1,25} no DSD100 e \num{1,46} no SQAM,
+e o codec da Parte~II obtém \num{1,77} e \num{2,90}; a diferença mede o que vem
+da modelação temporal e não contraria o limite de Shannon, que se aplica ao
+modelo com que foi calculado.
 
-\subsection{Formato do ficheiro comprimido}
-\todo{Cabeçalho (metadados do WAV necessários para reconstrução bit a bit),
-organização em blocos/\emph{frames}.}
 
-\subsection{Módulo \emph{BitStream}}
-\todo{Escrita/leitura bit a bit, eficiência (\emph{buffering}).}
-
-\subsection{Descorrelação entre canais}
-\todo{MID/SIDE e alternativas; escolha adaptativa por bloco.}
-
-\subsection{Predição temporal}
-\todo{Preditores polinomiais fixos de ordem 0--3 e/ou LPC; escolha por bloco;
-justificação experimental.}
-
-\subsection{Codificação entrópica dos resíduos}
-\subsubsection{Códigos de Golomb/Rice}
-\todo{Mapeamento de inteiros com sinal, escolha do parâmetro $m$.}
-\subsubsection{Adaptação do parâmetro}
-\todo{Estimação por bloco vs.\ adaptação contínua.}
-
-\subsection{Parâmetros e opções do codificador}
-\todo{Tamanho de bloco, ordem do preditor, etc.; efeito de cada opção.}
-
-\subsection{Avaliação experimental}
-\subsubsection{Metodologia}
-\todo{Máquina, compilador e flags, medição do tempo e da memória
-(\prog{/usr/bin/time -v}), n.º de repetições.}
-\subsubsection{Estudo dos parâmetros do codec}
-\todo{Gráficos: taxa de compressão vs.\ tamanho de bloco, ordem, etc.}
-\subsubsection{Comparação com o estado da arte}
-\todo{FLAC (vários níveis), zstd, lzma/xz, gzip, bzip2...}
-
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
-\caption{Comparação de codecs sem perdas (médias sobre o conjunto de teste).}
-\label{tab:lossless}
-\begin{tabular}{lcccc}
+\caption{Entropia de ordem zero (bits/amostra) e desvio padrão por canal, nos 20
+ficheiros de treino. São dadas as faixas de menor e de maior entropia de cada
+coleção e as médias respetivas. O quarto canal é a diferença média $(L-R)/2$,
+não o $L-R$ do codec. A última coluna é a taxa de compressão que esta entropia
+permitiria se as amostras fossem independentes.}
+\label{tab:entropia}
+\footnotesize
+\begin{tabular}{lccccccc}
 \toprule
-Codec & Taxa de compressão & T.\ codif.\ (s) & T.\ descodif.\ (s) & Memória (MB) \\
+Ficheiro & $H_L$ & $H_R$ & $H_{MID}$ & $H_{(L-R)/2}$ & $\sigma_L$ & $\sigma_{(L-R)/2}$ & $16/H_L$ \\
 \midrule
-O nosso & -- & -- & -- & -- \\
-FLAC -8 & -- & -- & -- & -- \\
-zstd -19 & -- & -- & -- & -- \\
-xz -9 & -- & -- & -- & -- \\
+\texttt{090\_mix} & 11,30 & 11,72 & 11,31 & 10,61 & 724 & 463 & 1,42 \\
+\texttt{098\_mix} & 14,35 & 14,37 & 14,27 & 12,82 & 5150 & 1761 & 1,12 \\
+\texttt{sqam\_40} & 9,84 & 9,85 & 9,67 & 8,76 & 755 & 414 & 1,63 \\
+\texttt{sqam\_14} & 12,08 & 12,18 & 12,01 & 11,06 & 3923 & 1869 & 1,32 \\
+\midrule
+Média DSD100 & 12,84 & 12,90 & 12,76 & 11,39 & 3015 & 1062 & 1,25 \\
+Média SQAM & 10,92 & 10,93 & 10,88 & 8,71 & 2706 & 672 & 1,46 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsubsection{Discussão}
-\todo{}
-
-% =====================================================================
-\section{Parte III --- Codec de áudio com perdas baseado na DCT}
-% =====================================================================
-\subsection{Visão geral e diagrama de blocos}
-\todo{Figura com o diagrama de blocos.}
-
-\subsection{Segmentação em blocos e janelamento}
-\todo{Tamanho do bloco, sobreposição, janela; efeito nos artefactos de bloco.}
-
-\subsection{Transformada DCT}
-\todo{Tipo de DCT (DCT-II/IV, MDCT), implementação (p.\,ex.\ FFTW) e custo computacional.}
-
-\subsection{Quantização dos coeficientes}
-\subsubsection{Quantização uniforme}
-\todo{}
-\subsubsection{Quantização dependente da frequência}
-\todo{Bandas, pesos, eliminação de coeficientes de alta frequência;
-eventual modelo psicoacústico simplificado.}
-
-\subsection{Codificação entrópica dos coeficientes}
-\todo{Reutilização do Golomb da Parte II, codificação de zeros, etc.}
-
-\subsection{Controlo de débito e opções do codificador}
-\todo{Como o utilizador escolhe o compromisso débito--distorção.}
-
-\subsection{Justificação experimental das decisões}
-\todo{Curvas débito--distorção (SNR vs.\ kbps) para cada alternativa testada.}
-
-\subsection{Comparação com codecs MPEG}
-\todo{MP3 e AAC (e p.\,ex.\ Opus) via ffmpeg: taxa de compressão, SNR,
-tempos e memória. Gráfico SNR vs.\ débito.}
-
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
-\fbox{\parbox[c][4cm][c]{0.7\linewidth}{\centering Gráfico SNR (dB) vs.\ débito (kbps)}}
-% \includegraphics[width=0.7\linewidth]{figuras/rd_curve.pdf}
-\caption{Desempenho débito--distorção do codec proposto e dos codecs MPEG.}
-\label{fig:rd}
+\includegraphics[width=0.64\linewidth]{figuras/hist_parte1.png}
+\caption{Histogramas de L, R, MID e $(L-R)/2$ do \texttt{062\_mix}, em
+\emph{bins} de $2^8$ valores e escala logarítmica em $y$, onde o decaimento
+linear dos flancos corresponde a contagens com decaimento exponencial. Com o
+mesmo eixo das abcissas, a diferença média ocupa cerca de um quinto da gama de L
+e R.}
+\label{fig:hist}
 \end{figure}
 
-\subsection{Discussão}
-\todo{Limitações da SNR como medida de qualidade percetual, etc.}
+\subsection{\prog{wav\_cmp}: métricas de erro}
+\label{sec:cmp}
+Para cada canal e para o MID, o programa calcula o erro quadrático médio (norma
+$L^2$), o erro máximo por amostra (norma $L^\infty$) e a relação sinal-ruído:
+\begin{equation}
+  \mathrm{SNR} = 10\log_{10}\frac{\sum_n x[n]^2}{\sum_n \left(x[n]-\tilde{x}[n]\right)^2}\ \text{dB}
+\end{equation}
+As três métricas são complementares e nenhuma dispensa as outras. O MSE descreve
+o comportamento médio, mas dilui o pior caso entre milhões de amostras; o
+$L^\infty$ expõe a amostra isolada mais errada, audível como um estalido e que o
+MSE esconde; o SNR normaliza o erro pela energia do sinal, o que permite
+comparar ficheiros com volumes diferentes. Os valores são dados para L, para R e
+para o MID, que é o canal médio pedido no enunciado. A acumulação é feita em
+vírgula flutuante de dupla precisão, porque a soma dos quadrados excede a gama
+de um inteiro de \SI{32}{bits}.
+
+Este programa é o instrumento de medida das Partes~II e~III: um erro aqui não
+afetaria uma secção, afetaria todos os números do relatório. É essa a razão de
+as suas saídas terem sido recalculadas de forma independente em \prog{numpy}
+(Secção~\ref{sec:metodo}).
+
+\subsection{\prog{wav\_quant}: quantização escalar uniforme}
+\label{sec:quant}
+Para reduzir uma amostra de 16 para $b$ bits, o programa usa um quantizador
+uniforme com passo $\Delta = 2^{16-b}$, com índice
+$q = \lfloor s/\Delta \rfloor$ e amostra reconstruída
+$\tilde{s} = q\Delta + \Delta/2$, ou seja o ponto médio do intervalo de
+quantização. A alternativa mais simples, truncar ($\tilde{s} = q\Delta$), produz
+um erro sempre do mesmo sinal, entre $0$ e $\Delta-1$, e com o ponto médio o
+erro fica centrado em zero. O erro máximo medido confirma-o em todos os
+ficheiros, sendo exatamente $\Delta/2$ com o ponto médio e $\Delta-1$ a truncar
+(Tabela~\ref{tab:quant}). Em média o ponto médio ganha 4,4 a
+\SI{4,6}{\decibel} de SNR (5,0 a \SI{5,5}{\decibel} no DSD100 e 3,0 a
+\SI{3,8}{\decibel} no SQAM, pela razão explicada abaixo), e é por isso o modo
+por omissão, ficando a truncagem disponível como opção. Como $\tilde{s}$ fica
+sempre dentro do intervalo da amostra original, a saída nunca excede a gama do
+formato e não é necessária saturação.
+
+A Tabela~\ref{tab:quant} compara as medições com o modelo teórico. Entre 12 e
+8~bits o SNR desce \SI{6,07}{\decibel} por bit, próximo do valor esperado de
+$20\log_{10}2 \approx \SI{6,02}{\decibel}$. O MSE coincide com $\Delta^2/12$ nos
+ficheiros sem silêncio (razão de $1{,}01$ no \texttt{098\_mix}, que não tem
+amostras nulas), mas fica acima nos restantes. A causa é o silêncio digital,
+porque o quantizador de ponto médio não tem o nível zero e cada amostra nula é
+reconstruída como $\Delta/2$, com erro quadrático $\Delta^2/4$, três vezes o
+valor médio. Com uma fração $p$ de amostras nulas, o MSE esperado passa a
+$(1+2p)\,\Delta^2/12$. A 12~bits esta previsão acerta na razão medida com erro
+médio de \SI{1,2}{\percent} (máximo \SI{5,4}{\percent}) nos 20 ficheiros, que
+vão de 0 a \SI{24}{\percent} de amostras nulas, e as gravações do SQAM, com mais
+silêncio, são as que mais se afastam de $\Delta^2/12$. É também por isso que o
+ponto médio ganha menos no SQAM, porque no silêncio truncar reconstrói o zero
+exatamente. Como o MSE e o SNR são calculados pelo \prog{wav\_cmp}, este acordo
+quantitativo com a teoria valida os dois programas. Abaixo de 6~bits o modelo
+deixa de se aplicar ao sinal, porque o passo se torna comparável à amplitude da
+música e o erro deixa de se distribuir uniformemente no intervalo.
+
+Por fim, o ficheiro produzido continua a ser um WAV de \SI{16}{bits} e não
+diminui de tamanho, porque há apenas $2^b$ valores distintos mas cada um
+continua a ocupar 16~bits. A redução só se concretiza quando um codificador
+entrópico atua a seguir e gasta poucos bits nos valores mais frequentes, que é
+precisamente a combinação usada no codec com perdas da Parte~III, aplicada aos
+coeficientes da MDCT em vez de às amostras.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{rrrrcrrr}
+\toprule
+ & & \multicolumn{3}{c}{MSE} & & \multicolumn{2}{c}{SNR (dB)} \\
+\cmidrule(lr){3-5}\cmidrule(lr){7-8}
+Bits & $\Delta$ & teórico ($\Delta^2/12$) & medido & razão & $L^\infty$ medido & ponto médio & truncar \\
+\midrule
+16 & 1     & 0                & 0                & ---    & 0      & $\infty$ & $\infty$ \\
+12 & 16    & \num{21,3}       & \num{25,9}       & 1,21   & 8      & 53,93    & 49,53 \\
+10 & 64    & \num{341,3}      & \num{423,6}      & 1,24   & 32     & 41,79    & 37,16 \\
+8  & 256   & \num{5461}       & \num{6969}       & 1,28   & 128    & 29,64    & 25,02 \\
+6  & 1024  & \num{87381}      & \num{121816}     & 1,39   & 512    & 17,23    & 12,88 \\
+4  & 4096  & \num{1398101}    & \num{2229191}    & 1,59   & 2048   & 4,64     & 0,62 \\
+2  & 16384 & \num{22369621}   & \num{47412537}   & 2,12   & 8192   & $-8{,}66$ & $-11{,}96$ \\
+\bottomrule
+\end{tabular}
+\caption{Quantização nos 20 ficheiros de treino (canais L e R). MSE e SNR
+médios, $L^\infty$ máximo, com reconstrução no ponto médio. A razão entre o MSE
+medido e o teórico vem do silêncio digital, explicado no texto.}
+\label{tab:quant}
+\end{table}
+
+\subsection{\prog{wav\_effects}: efeitos de áudio}
+\label{sec:effects}
+O \prog{wav\_effects} aplica quatro efeitos, todos descritos por equações às
+diferenças sobre as amostras. O eco simples é $y[n] = x[n] + a\,x[n-D]$, uma
+única repetição atenuada. Os ecos múltiplos usam realimentação,
+$y[n] = x[n] + a\,y[n-D]$, o que exige $|a| < 1$ para a saída não divergir. A
+modulação de amplitude é $y[n] = x[n]\,(1 + m\cos(2\pi f n / f_s))$. O quarto
+efeito é um atraso variável no tempo, em que a posição a ler cai entre duas
+amostras e é obtida por interpolação linear. Os atrasos são indicados em
+milissegundos e as frequências em hertz, convertidos para amostras pela taxa de
+amostragem do ficheiro.
+
+A implementação foi validada com um impulso: à entrada de um único valor não
+nulo, a saída do eco com realimentação apresenta impulsos em $D$, $2D$,
+$3D$\ldots com amplitudes $a$, $a^2$, $a^3$\ldots, o que confirma o atraso e o
+fator de atenuação sem recorrer à audição.
+% =====================================================================
+\section{Parte II --- Codec de áudio sem perdas}
+\label{sec:parte2}
+% =====================================================================
+O codec remove redundância em andares reversíveis, pelo que a saída do
+descodificador é igual à entrada do codificador por construção e não por
+aproximação. Nenhum parâmetro da codificação é fixado à mão. O modo de canais, a
+ordem do preditor, o número de partições de Rice e o $k$ de cada uma são
+escolhidos bloco a bloco, por minimização do custo real em bits.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    scale=0.92, transform shape,
+    font=\small,
+    bloco/.style={draw, rounded corners=2pt, align=center, minimum height=1.15cm,
+                  text width=2.0cm, inner sep=2pt, fill=blue!6, font=\scriptsize},
+    io/.style={align=center, text width=1.35cm, font=\scriptsize},
+    seta/.style={-{Stealth[length=2mm]}, thick},
+    rot/.style={font=\tiny, align=center, text=black!70},
+    node distance=0.5cm and 0.28cm]
+  % ---- codificador (linha de cima, da esquerda para a direita)
+  \node[io] (in) {WAV\\ original};
+  \node[bloco, right=of in] (ms) {Descorrelação\\ de canais};
+  \node[bloco, right=of ms] (pred) {Predição\\ ordem 0--3};
+  \node[bloco, right=of pred] (rice) {Golomb/Rice\\ por partição};
+  \node[bloco, right=of rice] (bw) {Escrita\\ bit a bit};
+  % ---- ficheiro comprimido, entre as duas linhas
+  \node[io, draw, dashed, minimum height=2.8cm, text width=1.15cm,
+        right=0.28cm of bw.east, anchor=north west, yshift=0.58cm] (file)
+        {Ficheiro\\ compri\-mido};
+  % ---- descodificador (linha de baixo, da direita para a esquerda)
+  \node[bloco, below=1.35cm of bw] (br) {Leitura\\ bit a bit};
+  \node[bloco, below=1.35cm of rice] (urice) {Golomb/Rice\\ inverso};
+  \node[bloco, below=1.35cm of pred] (upred) {Soma da\\ previsão};
+  \node[bloco, below=1.35cm of ms] (ulr) {Voltar\\ a L/R};
+  \node[io, below=1.35cm of in] (out) {WAV\\ descodif.};
+  % ---- setas
+  \draw[seta] (in) -- (ms);
+  \draw[seta] (ms) -- (pred);
+  \draw[seta] (pred) -- (rice);
+  \draw[seta] (rice) -- (bw);
+  \draw[seta] (bw.east) -- (bw.east -| file.west);
+  \draw[seta] (br.east -| file.west) -- (br.east);
+  \draw[seta] (br) -- (urice);
+  \draw[seta] (urice) -- (upred);
+  \draw[seta] (upred) -- (ulr);
+  \draw[seta] (ulr) -- (out);
+  % ---- o que circula entre os blocos
+  \node[rot, below=0.24cm of $(ms.south)!0.5!(pred.south)$] {L/R ou\\ MID/SIDE};
+  \node[rot, below=0.24cm of $(pred.south)!0.5!(rice.south)$] {resíduos};
+  \node[rot, below=0.24cm of $(rice.south)!0.5!(bw.south)$] {inteiros\\ do zigzag};
+  % ---- caixa das decisões por bloco
+  \node[draw, dashed, rounded corners=3pt, black!55, inner sep=5pt,
+        fit=(ms)(pred)(rice), label={[font=\tiny, text=black!60, yshift=-1pt]above:%
+        decisões por bloco, por minimização do custo em bits}] (dec) {};
+\end{tikzpicture}
+\caption{Codec sem perdas, com o codificador em cima e o descodificador em
+baixo. Todos os andares são reversíveis, ao contrário da
+Figura~\ref{fig:lossy-blocos}.}
+\label{fig:lossless-blocos}
+\end{figure}
+
+\subsection{Formato do ficheiro e preservação do contentor}
+\label{sec:formato}
+O cabeçalho do ficheiro comprimido ocupa \num{29} bytes e guarda a marca de
+formato, os parâmetros do WAV original, o número de \emph{frames}, o tamanho do
+bloco e os comprimentos dos dois troços de contentor. O número de \emph{frames}
+é indispensável, porque o último byte do fluxo é completado com zeros e sem ele
+o descodificador não sabe onde parar de ler resíduos. Cada bloco tem o seu
+próprio cabeçalho, com um bit para o modo de canais, ausente em mono, e por
+canal dois bits de ordem, três bits para o expoente do número de partições e
+cinco bits por cada parâmetro $k$. Em blocos de \num{4096} amostras isso custa
+\num{21} bits no mínimo, com uma partição por canal, e \num{1291} bits no limite
+de \num{128} partições. O número de partições não é fixo e entra na mesma
+minimização de custo, com os cinco bits de cada $k$ contabilizados, pelo que um
+valor mais alto só é escolhido quando paga o seu próprio cabeçalho.
+
+A preservação do contentor foi o problema mais instrutivo desta parte. A
+primeira versão escrevia a saída com a \texttt{libsndfile}, que produz um
+cabeçalho mínimo, e o \prog{wav\_cmp} dava erro nulo nas amostras enquanto o
+\prog{cmp} falhava. Foi essa contradição que localizou o problema fora do codec,
+nos blocos de metadados que se perdiam, e a solução foi guardar os bytes
+anteriores e posteriores ao bloco \texttt{data} e reescrevê-los literalmente. A
+visibilidade desta propriedade é, no entanto, limitada. Os ficheiros oficiais
+foram normalizados e têm cabeçalho canónico de \num{44}~bytes sem metadados,
+pelo que o \prog{flac} também passa o \prog{cmp} neles. O codec distingue-se
+apenas em ficheiros com metadados, onde guardar o contentor custava \num{5766}
+bytes contra os \num{44} atuais.
+
+\subsection{Descorrelação entre canais e predição temporal}
+\label{sec:pred}
+Num ficheiro estéreo os dois canais tomam valores próximos, pelo que o codec os
+representa pela parte comum e pela diferença, com o MID igual à divisão inteira
+de $L+R$ por dois e o SIDE igual a $L-R$. A divisão descarta o bit menos
+significativo de $L+R$ e ainda assim a reconstrução é exata, porque $L+R$ e
+$L-R$ têm sempre a mesma paridade, pelo que
+$L+R = 2\,\mathrm{MID} + (\mathrm{SIDE} \mathbin{\&} 1)$. O par MID e SIDE custa
+menos do que o par L e R nos 20 ficheiros de treino, sem exceção, mas o modo é
+decidido em cada bloco, ao custo de um bit, porque a entropia por ficheiro é uma
+média que não distingue os trechos em que os canais divergem.
+
+Em vez da amostra transmite-se o erro de previsão, que o descodificador soma à
+previsão refeita a partir das amostras que já reconstruiu. São usados quatro
+preditores polinomiais fixos, de ordem 0 a 3, com coeficientes binomiais de
+sinais alternados, e a ordem $p$ anula qualquer troço do sinal que seja
+polinomial de grau inferior a $p$. Não se vai além da ordem 3 porque a
+diferenciação amplifica o ruído por um fator igual à soma dos quadrados dos
+coeficientes (\num{1}, \num{2}, \num{6} e \num{20}), o que encarece o piso de
+ruído em cerca de \num{0,9} bits por amostra da ordem 2 para a 3, e é por o
+mínimo ser intermédio e variável que a ordem é escolhida em cada bloco e em cada
+canal. Como o codificador avalia as quatro ordens e fica com a mais barata, a
+escolha adaptativa nunca é pior do que a melhor ordem fixa. O preditor não reinicia nas fronteiras dos blocos, porque as três
+amostras anteriores vêm do bloco precedente, o que evita uma previsão má no
+início de cada bloco e torna possível o processamento em fluxo da
+Secção~\ref{sec:fluxo}.
+
+O tamanho do bloco é o único parâmetro com valor fixo. A Tabela~\ref{tab:bloco}
+mostra uma curva plana, com \SI{0,84}{\percent} entre os extremos testados, e o
+melhor valor medido é \num{2048}, com \num{2,2883} de taxa total contra
+\num{2,2838} do bloco adotado. Como o tempo de codificação não separa os dois,
+manteve-se \num{4096}, porque a diferença fica abaixo de um quarto de ponto
+percentual e é com esse valor que foram obtidas as restantes medições.
+
+\begin{table}[htbp]
+\centering
+\caption{Tamanho do bloco, nos 20 ficheiros de treino, com os restantes
+parâmetros decididos pelo codificador. O tempo é o total dos 20, em tempo de
+parede e melhor de três execuções. A negrito, o valor por omissão.}
+\label{tab:bloco}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Amostras por bloco & \num{2048} & \textbf{\num{4096}} & \num{8192} & \num{16384} \\
+\midrule
+Taxa de compressão (total) & 2,2883 & \textbf{2,2838} & 2,2773 & 2,2692 \\
+Taxa de compressão (média) & 2,4973 & \textbf{2,4903} & 2,4787 & 2,4613 \\
+Tempo de codificação (s)   & 2,07 & \textbf{2,09} & 2,17 & 2,15 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Codificação entrópica: \emph{BitStream}, Rice e partições}
+\label{sec:rice}
+Um ficheiro só guarda bytes, mas a codificação precisa de escrever valores com
+um número arbitrário de bits, colados uns aos outros e eventualmente partidos
+entre dois bytes. É essa a função do \prog{BitStream}, que completa o último
+byte com zeros, razão pela qual o número de \emph{frames} consta do cabeçalho. A
+primeira versão fazia uma chamada ao \texttt{iostream} por byte, três milhões e
+meio delas num ficheiro comprimido de \SI{3,5}{MiB} e em cada sentido, e a
+versão final acumula os bits num registo de \num{64} bits e os bytes num
+\emph{buffer} de \SI{64}{KiB}, sem alterar a ordem dos bits nem o formato. A
+descodificação desceu de \SI{0,075}{\second} para \SI{0,043}{\second} por
+ficheiro, valor que inclui o processamento em fluxo por as duas alterações terem
+entrado na mesma versão.
+
+Os resíduos do preditor são inteiros com sinal, concentrados perto de zero e sem
+limite superior garantido. O mapeamento zigzag intercala negativos com positivos
+e converte essa distribuição simétrica numa distribuição aproximadamente
+geométrica, e para distribuições geométricas o código de Golomb é o código de
+prefixo de menor comprimento médio, que é a razão de ser o mais adequado aqui.
+Uma tabela de Huffman teria de ser transmitida ou fixada de antemão e perde
+eficiência quando um símbolo concentra probabilidade muito alta, que é o caso
+dos resíduos em trechos silenciosos. Com $m$ potência de dois, a variante de
+Rice, o quociente e o resto reduzem-se a um deslocamento e a uma máscara, e o
+custo em bits de um valor $u$ com parâmetro $k$ é
+$\lfloor u/2^{k} \rfloor + 1 + k$, expressão que o codificador avalia em cada
+decisão em vez de uma estimativa de entropia. O $k$ de arranque vem da média dos
+resíduos em zigzag, a regra do \prog{flac}, e é refinado nos dois vizinhos,
+porque perto do mínimo a curva de custo é plana.
+
+Um único $k$ por bloco serviria mal um bloco com um ataque percussivo no início
+e silêncio no resto, pelo que o bloco é dividido em partições, de \num{1} a
+\num{128}, cada uma com o seu $k$ e um mínimo de \num{16} amostras, com o número
+escolhido por bloco e por canal pelo mesmo critério de custo, ao preço de três
+bits de expoente mais cinco bits por cada $k$. O ganho medido é de \num{2,2416}
+para \num{2,2838} na taxa total e de \num{2,4336} para \num{2,4903} na taxa
+média, atribuível às partições porque as restantes alterações da mesma versão
+foram verificadas como neutras na taxa, com os ficheiros comprimidos pelas duas
+versões idênticos bit a bit. Com as partições, o modo de canais e a ordem do
+preditor decididos por bloco, o codificador não tem nenhum parâmetro afinado ao
+conjunto de desenvolvimento à exceção do tamanho do bloco, o que responde ao
+aviso da equipa docente sobre especialização. Os dois codecs deste trabalho usam
+codificadores entrópicos diferentes de propósito, e a Secção~\ref{sec:lossy-ent}
+dá o custo medido de aplicar este código de Rice aos coeficientes da MDCT.
+
+\subsection{Processamento em fluxo e paralelismo}
+\label{sec:fluxo}
+A primeira versão carregava o ficheiro inteiro num vetor de inteiros de
+\num{32} bits, o dobro do tamanho de um WAV de \num{16} bits, e lia-o uma
+segunda vez para localizar o bloco \texttt{data}, pelo que a memória crescia
+linearmente com a duração do áudio. Nada no algoritmo obriga a isso, porque
+todas as decisões são locais ao bloco e o preditor precisa apenas das três
+amostras anteriores, e a versão final mantém em memória uma janela com um lote
+de blocos mais três \emph{frames} de histórico por canal. Nos 20 ficheiros a
+memória de codificação desceu de \SI{45,6}{MiB} para \SI{4,8}{MiB} e a de
+descodificação de \SI{40,6}{MiB} para \SI{4,0}{MiB}, mas o ponto não é a memória
+ser menor, é deixar de depender da duração do áudio, o que se vê no ficheiro de
+\SI{44,4}{MiB}, onde a versão em memória precisa de \SI{157,4}{MiB} e a versão
+em fluxo se mantém nos \SI{4,6}{MiB}. A alteração não custou compressão, e isso
+foi verificado em separado da alteração das partições, com os ficheiros
+comprimidos pelas duas versões idênticos bit a bit, pelo que a diferença de taxa
+da Tabela~\ref{tab:fluxo} vem das partições de Rice.
+
+A mesma propriedade torna possível o paralelismo, porque a decisão de cada bloco
+não depende de nenhuma decisão tomada noutro bloco. Os blocos de cada lote são
+decididos em paralelo e escritos sempre pela ordem original, o que mantém o
+formato determinista, com ficheiro idêntico com 1, 2, 4 ou 8 fios de execução,
+verificado com o \prog{cmp}. No ficheiro de referência de \num{30} segundos o
+tempo de parede desce de \SI{0,21}{\second} com um fio para \SI{0,10}{\second}
+com quatro e \SI{0,07}{\second} com oito, o tempo de CPU sobe para valores entre
+\SI{0,23}{\second} e \SI{0,27}{\second}, e a memória passa de \SI{4,1}{MiB} para
+\SI{5,1}{MiB}. Por omissão são quatro fios, ou os núcleos disponíveis se forem
+menos, o que mantém a memória baixa e não pressupõe uma máquina com oito
+núcleos. O paralelismo ganha em tempo de parede e perde em tempo de CPU, pelo
+que um único fio é preferível se a avaliação medir tempo de CPU, e o programa
+permite-o com a opção \texttt{-{}-threads 1}.
+
+\begin{table}[htbp]
+\centering
+\caption{Efeito do processamento em fluxo. Tempos médios por ficheiro, memória
+de pico, taxa total. A diferença de taxa vem das partições de Rice, não do
+fluxo, que foi verificado como neutro.}
+\label{tab:fluxo}
+\small
+\begin{tabular}{l l c cc cc}
+\toprule
+ & & & \multicolumn{2}{c}{Tempo (s)} & \multicolumn{2}{c}{Memória (MiB)} \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+Conjunto & Versão & Taxa & codif. & descodif. & codif. & descodif. \\
+\midrule
+\multirow{2}{*}{20 ficheiros}
+ & em memória & 2,2416 & 0,209 & 0,075 & 45,6 & 40,6 \\
+ & em fluxo   & 2,2838 & 0,098 & 0,043 & 4,8 & 4,0 \\
+\midrule
+\multirow{3}{*}{\SI{44,4}{MiB}}
+ & em memória & 2,9938 & 1,54 & --- & 157,4 & 136,4 \\
+ & em fluxo   & 3,1889 & 0,80 & --- & 4,6 & 3,9 \\
+ & \texttt{flac -8} & 3,4330 & 0,71 & --- & 3,4 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparação com o estado da arte}
+\label{sec:ll-cmp}
+A Tabela~\ref{tab:lossless} compara o codec com dois compressores de uso geral e
+com o \prog{flac} em dois níveis. Contra o \texttt{xz -9} e o \texttt{zstd -19}
+a vantagem é folgada, com taxa total \SI{12,2}{\percent} e \SI{25,5}{\percent}
+superior, codificação \num{10} e \num{6} vezes mais rápida e memória de
+codificação \num{37} e \num{21} vezes menor. O resultado era de esperar, porque
+nenhum dos dois sabe que está a olhar para áudio, mas serve para situar a ordem
+de grandeza do que se ganha por modelar o sinal. A exceção está na
+descodificação, onde o \texttt{zstd -19} é cerca de cinco vezes mais rápido,
+comportamento próprio de um formato assimétrico.
+
+Contra o \texttt{flac -8} o resultado é desfavorável e convém dizê-lo sem
+rodeios. A taxa total é \SI{11,1}{\percent} inferior, o que equivale a ficheiros
+comprimidos \SI{12,4}{\percent} maiores, duas leituras do mesmo facto que não
+dão o mesmo número. No tempo de codificação há empate, \SI{0,098}{\second}
+contra \SI{0,097}{\second} por ficheiro, mas a descodificação é \num{1,7} vezes
+mais lenta e a memória \num{1,3} vezes maior nos dois sentidos. As causas estão
+identificadas, o \prog{flac} usa predição linear com coeficientes calculados e
+transmitidos em cada bloco, em vez de preditores fixos, e dispõe de quatro modos
+de canal em vez de dois, e ambas são retomadas na Secção~\ref{sec:conclusoes}.
+
+A média dos 20 ficheiros esconde duas populações. O SQAM comprime a \num{2,90}
+em taxa total e o DSD100 a \num{1,77}, uma diferença de \SI{64}{\percent},
+porque o SQAM tem instrumentos solo, voz e sinais de teste, com trechos
+estacionários e silêncios onde o preditor acerta, e o DSD100 tem mixagens densas
+de banda larga onde sobra pouca redundância. Dar apenas a média juntaria duas
+populações num número que não descreve nenhuma delas, e o conjunto cego pode ter
+proporções diferentes. Quanto à exatidão, todos os codecs da tabela reconstroem
+as amostras sem erro e, nestes ficheiros, reproduzem também o original byte a
+byte, por não terem blocos de metadados, pelo que a coluna foi retirada da
+tabela e a diferença discutida na Secção~\ref{sec:formato} só se manifesta em
+contentores com blocos adicionais.
+
+\begin{table}[htbp]
+\centering
+\caption{Codecs sem perdas nos 20 ficheiros de treino, com as duas convenções
+de taxa da Secção~\ref{sec:metodo}. Tempos médios por ficheiro e memória de
+pico. As linhas indentadas são colecções, não codecs, e a taxa média dos
+compressores externos não foi registada por ficheiro.}
+\label{tab:lossless}
+\footnotesize
+\begin{tabular}{l cc cc cc}
+\toprule
+ & \multicolumn{2}{c}{Taxa} & \multicolumn{2}{c}{Tempo (s)} & \multicolumn{2}{c}{Memória (MiB)} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+Codec & média & total & codif. & descodif. & codif. & descodif. \\
+\midrule
+\texttt{flac -8}  & --- & 2,5675 & 0,097 & 0,025 & 3,6 & 3,1 \\
+\texttt{flac -5}  & --- & 2,5343 & 0,035 & 0,024 & 3,6 & 3,1 \\
+\textbf{O nosso}  & 2,4903 & 2,2838 & 0,098 & 0,043 & 4,8 & 4,0 \\
+\quad DSD100      & 1,8485 & 1,7698 & 0,089 & 0,040 &     &     \\
+\quad EBU SQAM    & 3,1320 & 2,9019 & 0,106 & 0,047 &     &     \\
+\texttt{xz -9}    & --- & 2,0360 & 0,987 & 0,146 & 178,8 & 14,6 \\
+\texttt{zstd -19} & --- & 1,8202 & 0,618 & 0,009 & 101,3 & 12,1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+% =====================================================================
+\section{Parte III --- Codec de áudio com perdas baseado na DCT}
+\label{sec:parte3}
+% =====================================================================
+Como o enunciado avalia a distorção pelo SNR, o codec foi desenhado para
+minimizar o erro quadrático para cada débito, e não o erro percebido. A
+Figura~\ref{fig:lossy-blocos} mostra a cadeia. Em estéreo, os canais passam
+primeiro para MID/SIDE ortonormal, que concentra a energia no canal comum.
+Cada canal é então decomposto pela MDCT em blocos de $N = 2048$ coeficientes
+com sobreposição de metade, o que concentra a energia em poucos coeficientes.
+Estes são quantizados com um passo $\Delta$ único e uma zona morta, que deixa a
+maioria a zero, e escritos por um codificador aritmético adaptativo com
+contexto. A quantização é a única etapa com perdas; as restantes são
+reversíveis e foram escolhidas ortonormais, de modo que o erro introduzido nos
+coeficientes é igual ao erro no áudio. Assim, todo o compromisso entre débito
+e distorção é controlado por um único parâmetro, $\Delta$, que o codificador
+ajusta por bisseção até atingir o débito ou o SNR pedidos. O descodificador
+percorre a cadeia em sentido inverso, um bloco de cada vez.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    scale=0.92, transform shape,
+    font=\small,
+    bloco/.style={draw, rounded corners=2pt, align=center, minimum height=1.15cm,
+                  text width=2.0cm, inner sep=2pt, fill=blue!6, font=\scriptsize},
+    perda/.style={bloco, fill=orange!18, draw=orange!70!black, thick},
+    io/.style={align=center, text width=1.35cm, font=\scriptsize},
+    seta/.style={-{Stealth[length=2mm]}, thick},
+    rot/.style={font=\tiny, align=center, text=black!70},
+    node distance=0.5cm and 0.35cm]
+  % ---- codificador (linha de cima, da esquerda para a direita)
+  \node[io] (in) {WAV\\ original};
+  \node[bloco, right=of in] (ms) {MID/SIDE\\ ortonormal};
+  \node[bloco, right=of ms] (mdct) {MDCT\\ $N = 2048$};
+  \node[perda, right=of mdct] (q) {Quantização\\ passo $\Delta$, zona morta};
+  \node[bloco, right=of q] (ac) {Codificação\\ aritmética};
+  % ---- ficheiro comprimido (à direita, entre as duas linhas)
+  \node[io, draw, dashed, minimum height=2.8cm, text width=1.15cm,
+        right=0.35cm of ac.east, anchor=north west, yshift=0.58cm] (file)
+        {Ficheiro\\ compri\-mido};
+  % ---- descodificador (linha de baixo, da direita para a esquerda)
+  \node[bloco, below=1.35cm of ac] (ad) {Descodificação\\ aritmética};
+  \node[bloco, below=1.35cm of q] (dq) {Reconstrução\\ $\hat{X} = q\,\Delta$};
+  \node[bloco, below=1.35cm of mdct] (imdct) {MDCT inversa\\ e sobreposição};
+  \node[bloco, below=1.35cm of ms] (lr) {Voltar a L/R\\ e arredondar};
+  \node[io, below=1.35cm of in] (out) {WAV\\ descodif.};
+  % ---- setas do codificador
+  \draw[seta] (in) -- (ms);
+  \draw[seta] (ms) -- (mdct);
+  \draw[seta] (mdct) -- (q);
+  \draw[seta] (q) -- (ac);
+  \draw[seta] (ac.east) -- (ac.east -| file.west);
+  % ---- setas do descodificador
+  \draw[seta] (ad.east -| file.west) -- (ad.east);
+  \draw[seta] (ad) -- (dq);
+  \draw[seta] (dq) -- (imdct);
+  \draw[seta] (imdct) -- (lr);
+  \draw[seta] (lr) -- (out);
+  % ---- ciclo de controlo do débito
+  \draw[seta, dashed, black!60] (ac.north) -- ++(0,0.4) -| node[rot, pos=0.25, above]
+        {bisseção de $\Delta$ até ao débito ou SNR alvo} (q.north);
+  % ---- o que circula entre os blocos (por baixo das setas de cima)
+  \node[rot, below=0.02cm of $(ms.south)!0.5!(mdct.south)$] {M, S};
+  \node[rot, below=0.02cm of $(mdct.south)!0.5!(q.south)$] {coefs.};
+  \node[rot, below=0.02cm of $(q.south)!0.5!(ac.south)$] {inteiros $q$};
+\end{tikzpicture}
+\caption{Diagrama de blocos do codec com perdas. Em cima, o codificador
+(\prog{wav\_lossy\_enc}); em baixo, o descodificador (\prog{wav\_lossy\_dec}).
+A quantização, a laranja, é a única etapa com perdas.}
+\label{fig:lossy-blocos}
+\end{figure}
+
+\subsection{MDCT: blocos, janela e sobreposição}
+\label{sec:mdct}
+Aplicar a DCT-II a blocos independentes, como faz o JPEG com blocos de
+$8 \times 8$ píxeis, cria descontinuidades nas fronteiras, porque cada bloco é
+quantizado separadamente. Usámos por isso a MDCT: blocos de
+$2N$ amostras com sobreposição de metade, multiplicados por uma janela seno,
+que produzem $N$ coeficientes cada (amostragem crítica). O \emph{aliasing}
+de cada bloco é cancelado pelo seguinte (TDAC), e a reconstrução sem
+quantização é perfeita.
+
+A MDCT é calculada como uma DCT-IV do bloco ``dobrado'', obtida por uma FFT de
+$N/2$ pontos, em $O(N\log N)$. Com a janela seno e a escala $\sqrt{2/N}$, a
+transformada é ortonormal: o erro de quantização nos coeficientes é igual ao
+erro no áudio, o que permite controlar o SNR no domínio dos coeficientes.
+Adotou-se $N = 2048$ (janela de \SI{93}{\milli\second}), escolhido por
+experiência (Secção~\ref{sec:lossy-exp}). O \prog{test\_mdct} confirma, para $N$
+entre 16 e 2048, que a versão rápida coincide com a definição, que a energia se
+conserva (erro relativo $< 2\times10^{-14}$) e que a reconstrução é exata ao
+nível da precisão numérica.
+
+A janela seno, $w[n] = \sin\!\big(\pi(n+\tfrac12)/2N\big)$, foi escolhida por
+cumprir a condição de Princen-Bradley, $w[n]^2 + w[n+N]^2 = 1$, que decorre de
+$\sin^2 + \cos^2 = 1$: é ela que faz o TDAC cancelar o \emph{aliasing} e que torna
+a transformada ortonormal, e a janela seno é a mais simples que a cumpre. Pela
+mesma razão, em estéreo usa-se $M = (L+R)/\sqrt2$ e $S = (L-R)/\sqrt2$: ao
+contrário do MID/SIDE inteiro e exatamente reversível do codec sem perdas
+(Secção~\ref{sec:pred}), aqui a exatidão inteira não serve, porque os
+coeficientes vão ser quantizados; o que importa é a ortonormalidade, que mantém
+o erro igual nos dois domínios. Mantendo o resto do codec e o débito, a MDCT
+ganha em média \SI{3,17}{\decibel} a \SI{64}{\kilo\bit\per\second} e
+\SI{2,44}{\decibel} a \SI{128}{\kilo\bit\per\second} face à DCT-II em blocos
+independentes de 2048 amostras. O ganho concentra-se no SQAM (+5,8 e
+\SI{+4,4}{\decibel}), gravações com silêncios e ataques isolados, onde as
+descontinuidades entre blocos pesam mais; nas misturas do DSD100 é de cerca de
+\SI{0,5}{\decibel}, e em 9 dos 40 casos a DCT-II é ligeiramente melhor.
+
+\subsection{Quantização dos coeficientes}
+\label{sec:lossy-quant}
+Cada coeficiente $X$ é quantizado com um passo $\Delta$ e reconstruído no
+descodificador como $\hat{X} = q\,\Delta$, com
+\begin{equation}
+  q = \operatorname{sinal}(X)\,\big\lfloor |X|/\Delta + z \big\rfloor .
+\end{equation}
+Esta é a única etapa com perdas do codec. Usa-se o mesmo $\Delta$ em todos os
+coeficientes: como a MDCT e o MID/SIDE são ortonormais, o erro no áudio é a
+soma dos erros nos coeficientes, e para minimizar essa soma com um dado número
+de bits o erro deve ser igual em todos eles. É aqui que o codec
+difere do MP3 e do AAC, que variam o passo por banda de frequência segundo um
+modelo do ouvido. Um único parâmetro controla assim todo o compromisso entre
+débito e distorção.
+
+O parâmetro $z$ define uma zona morta: com $z = 0{,}5$ obtém-se o
+arredondamento ao inteiro mais próximo; com $z < 0{,}5$, valores próximos de um
+limiar passam para o nível de menor módulo, em particular para zero. Isto
+aumenta ligeiramente o erro, mas poupa muitos bits, porque o zero é o valor
+mais barato para o codificador entrópico, e os bits poupados permitem um
+$\Delta$ menor.
+
+Adotou-se $z = 0{,}40$, que ganha \SI{0,35}{\decibel} a
+\SI{64}{\kilo\bit\per\second} e \SI{0,28}{\decibel} a
+\SI{128}{\kilo\bit\per\second} face ao arredondamento normal
+(Secção~\ref{sec:lossy-exp}); com ele ficam a zero, em média,
+\SI{86}{\percent} e \SI{73}{\percent} dos coeficientes, respetivamente.
+
+$N$ e $z$ são os únicos parâmetros fixos do codec e foram escolhidos por
+varredura nos ficheiros de treino, o que exige cuidado com a especialização. Em
+ambos o máximo é interior e a curva é plana à sua volta: $z = 0{,}35$ e $0{,}45$
+ficam a menos de \SI{0,12}{\decibel} do máximo, e $z = 0{,}40$ está a menos de
+\SI{0,1}{\decibel} do melhor valor em 39 dos 40 casos (ficheiro~$\times$~débito),
+pelo que não há um pico estreito em que sobreajustar. Entre $N = 1024$ e $2048$ a
+diferença é de \SI{0,03}{\decibel} a \SI{128}{\kilo\bit\per\second}, mas o melhor
+$N$ varia muito de ficheiro para ficheiro. Além disso, o critério de escolha foi o
+SNR, que não penaliza o pré-eco (o espalhamento do erro para antes de um ataque,
+mais audível com janelas longas): favorece, por isso, janelas mais longas do que
+as que um critério perceptual escolheria.
+
+
+\subsection{Codificação entrópica e controlo de débito}
+\label{sec:lossy-ent}
+Após a quantização, a maioria dos coeficientes é nula (\SI{73}{\percent} a
+\SI{128}{\kilo\bit\per\second} e \SI{86}{\percent} a \SI{64}{\kilo\bit\per\second}).
+Por isso não se reutilizou o código de Rice da Parte~II: gasta pelo menos um bit
+por valor, mesmo nulo, e com \num{88200} coeficientes por segundo esse bit
+obrigatório custaria sozinho \SI{88}{\kilo\bit\per\second}, mais do que o débito
+alvo de \SI{64}{\kilo\bit\per\second}: o código nem conseguiria atingir o alvo.
+Com o mesmo $\Delta$, o ficheiro seria em média $3{,}45$ e $2{,}56$ vezes maior
+(Tabela~\ref{tab:lossy-exp}). Usou-se um codificador aritmético binário
+adaptativo, em que cada decisão custa $-\log_2 p$ bits: um zero previsível custa
+uma fração de bit. As probabilidades adaptam-se durante a codificação (o
+descodificador repete as mesmas atualizações) e dependem de 48 contextos: seis
+zonas de frequência, em escala logarítmica, combinadas com oito níveis de
+amplitude dos coeficientes vizinhos (os dois anteriores do mesmo bloco e os da
+mesma frequência no bloco anterior).
+
+O débito é controlado pelo passo $\Delta$: \texttt{-q} usa um passo fixo,
+\texttt{-r} procura o passo que atinge um débito (por omissão
+\SI{128}{\kilo\bit\per\second}) e \texttt{-s} o que atinge um SNR. A procura estima
+$\Delta$ numa amostra de 48 blocos e afina-o com duas a quatro passagens pelo
+método da secante, até o débito ficar abaixo do alvo e a menos de
+\SI{0,05}{\percent} dele, sem guardar o ficheiro em memória.
+
+
+\subsection{Justificação experimental das decisões}
+\label{sec:lossy-exp}
+A Tabela~\ref{tab:lossy-exp} resume as experiências, feitas com o débito fixo e
+variando um parâmetro de cada vez, mantendo os restantes nos valores adotados.
+Cada bloco compara apenas valores do mesmo parâmetro, pelo que os números não são
+comparáveis entre blocos.
+
+\emph{Tamanho do bloco $N$ (referência: os outros tamanhos).} Em média, $N=2048$
+é o melhor nos dois débitos, mas a vantagem sobre $N=1024$ é de
+\SI{0,28}{\decibel} a \SI{64}{\kilo\bit\per\second} e de apenas
+\SI{0,03}{\decibel} a \SI{128}{\kilo\bit\per\second}, que não é significativa;
+nas misturas do DSD100, $N=1024$ é ligeiramente melhor. Ficheiro a ficheiro, o
+melhor $N$ varia muito: nenhum valor fica a menos de \SI{0,1}{\decibel} do melhor
+em mais de 13 dos 40 casos (ficheiro~$\times$~débito). $N=2048$ é, portanto, um
+compromisso médio, e escolher $N$ por ficheiro ganharia em média
+\SI{0,50}{\decibel} e \SI{0,64}{\decibel} (trabalho futuro).
+
+\emph{Zona morta $z$ (referência: arredondamento normal, $z=0{,}5$).} O valor
+$z=0{,}40$ ganha \SI{0,35}{\decibel} e \SI{0,28}{\decibel}. É também a escolha
+mais robusta: fica a menos de \SI{0,1}{\decibel} do melhor $z$ em 39 dos 40
+casos, e o máximo está no mesmo ponto nas duas coleções e nos dois débitos.
+
+\emph{Modo de canais (referência: L/R).} O MID/SIDE ortonormal ganha
+\SI{1,44}{\decibel} e \SI{1,71}{\decibel}, e é melhor ou igual em 38 dos 40
+casos.
+
+\emph{Codificador entrópico (referência: o codificador aritmético, com o mesmo
+$\Delta$).} Com um código de Rice com o melhor parâmetro por bloco e por canal,
+o ficheiro seria em média $3{,}45$ vezes maior a \SI{64}{\kilo\bit\per\second}
+e $2{,}56$ vezes a \SI{128}{\kilo\bit\per\second} (Secção~\ref{sec:lossy-ent}).
+
+Para evitar especializar o codec nos ficheiros de treino, como a equipa docente
+recomenda, escolheram-se valores que são os melhores nas duas coleções e que já
+o eram nos sete ficheiros preliminares usados no início do trabalho, e o modelo
+de contexto é adaptativo: aprende cada ficheiro desde o início, sem tabelas
+treinadas.
+
+\begin{table}[htbp]
+\centering
+\caption{Parâmetros do codec com perdas, média dos 20 ficheiros, com o valor
+adotado a negrito. Nos três primeiros blocos os valores são o SNR médio (dB), no
+último o tamanho relativo ao do codificador aritmético com o mesmo $\Delta$.}
+\label{tab:lossy-exp}
+\footnotesize
+\begin{tabular}{l l cc}
+\toprule
+ & & \multicolumn{2}{c}{Débito} \\
+\cmidrule(lr){3-4}
+Parâmetro & Valor & \SI{64}{\kilo\bit\per\second} & \SI{128}{\kilo\bit\per\second} \\
+\midrule
+\multirow{4}{*}{Coeficientes por bloco, $N$}
+ & \num{512}           & 36,13 & 45,32 \\
+ & \num{1024}          & 37,11 & 45,96 \\
+ & \textbf{\num{2048}} & \textbf{37,39} & \textbf{45,99} \\
+ & \num{4096}          & 36,87 & 45,31 \\
+\midrule
+\multirow{3}{*}{Zona morta, $z$}
+ & 0,30          & 37,17 & 45,64 \\
+ & \textbf{0,40} & \textbf{37,39} & \textbf{45,99} \\
+ & 0,50          & 37,04 & 45,71 \\
+\midrule
+\multirow{2}{*}{Modo de canais}
+ & L/R               & 35,95 & 44,28 \\
+ & \textbf{MID/SIDE} & \textbf{37,39} & \textbf{45,99} \\
+\midrule
+\multirow{2}{*}{Codificador entrópico (tamanho relativo)}
+ & \textbf{aritmético} & \textbf{1,00} & \textbf{1,00} \\
+ & Golomb/Rice         & 3,45 & 2,56 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparação com MP3 e AAC}
+\label{sec:lossy-cmp}
+O codec foi comparado com o MP3 (codificador LAME) e com o AAC (codificador nativo
+do \texttt{ffmpeg}), em débito constante, a 32, 64, 96, 128, 192 e
+\SI{256}{\kilo\bit\per\second}, nos 20 ficheiros. Os ficheiros descodificados
+foram acertados ao número de amostras do original e o SNR foi medido com o
+\prog{wav\_cmp}. O alinhamento temporal foi verificado por correlação cruzada: o
+atraso ótimo é zero para os dois codificadores. Esta verificação é necessária,
+porque um desfasamento de uma única amostra baixa o SNR do MP3 em 6 a
+\SI{7}{\decibel}, o que inflacionaria artificialmente a nossa vantagem. Quanto ao
+débito, o MP3 acerta no pedido, mas o AAC fica sistematicamente abaixo (por
+exemplo, \SI{234}{\kilo\bit\per\second} quando se pedem 256), o que o desfavorece
+um pouco; o nosso fica a menos de \SI{0,05}{\percent} do alvo.
+
+O nosso codec tem SNR mais alto em todos os débitos
+(Tabela~\ref{tab:lossy} e Figura~\ref{fig:rd}): a \SI{128}{\kilo\bit\per\second},
+\SI{45,97}{\decibel} contra \SI{21,64}{\decibel} do MP3 e \SI{25,38}{\decibel} do
+AAC. Uma diferença de \SI{24}{\decibel} equivale a cerca de 4~bits de precisão
+efetiva ($\approx\SI{6}{\decibel}$ por bit) ou a uma energia do erro cerca de 250
+vezes menor. A média esconde uma grande dispersão entre coleções: as gravações do
+SQAM, instrumentos isolados com muito silêncio, ficam \SIrange{20}{27}{\decibel}
+acima das misturas densas do DSD100 em todos os débitos. Quanto ao desempenho
+(Tabela~\ref{tab:lossy-perf}), a \SI{128}{\kilo\bit\per\second} o nosso codificador
+é mais rápido do que o MP3 e o AAC e usa cerca de três vezes menos memória, que
+além disso não depende do tamanho do ficheiro; o descodificador é um pouco mais
+lento do que o do \texttt{ffmpeg}. Face à versão anterior do nosso codec, que
+guardava o ficheiro inteiro em memória, a codificação ficou 3 vezes mais rápida e
+a memória desceu de \SI{34}{\mebi\byte} (até \SI{67}{\mebi\byte}) para
+\SI{5,4}{\mebi\byte}, sem alterar o SNR.
+
+Esta diferença de SNR \emph{não} permite concluir que o nosso codec soa melhor:
+o SNR favorece-o por construção. O nosso codificador minimiza o erro quadrático,
+que é exatamente o que o SNR mede, enquanto o MP3 e o AAC distribuem o erro segundo
+um modelo psicoacústico e colocam-no onde o ouvido não o deteta, o que degrada
+deliberadamente o SNR em troca de audibilidade. Os espectrogramas confirmam a
+diferença: a \SI{32}{\kilo\bit\per\second}, o MP3 elimina tudo acima de cerca de
+\SI{5,5}{\kilo\hertz}, enquanto o nosso codec mantém conteúdo até cerca de
+\SI{17}{\kilo\hertz} mas com muitos coeficientes anulados, que se ouvem como um
+som metálico. Num teste de audição a débitos baixos o resultado seria
+provavelmente o inverso. A comparação serve, por isso, para verificar que o
+controlo de débito atinge o alvo e que a relação débito--distorção é monótona, e
+não como medida de qualidade percebida, que exigiria testes de audição ou
+métricas perceptuais. Note-se ainda que o enunciado refere \emph{distortion
+measures}, no plural: a métrica da avaliação final pode não ser só o SNR.
+
+\begin{figure}[htbp]
+\centering
+\begin{minipage}[b]{0.49\linewidth}
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{3.5pt}
+  \begin{tabular}{cccccc}
+  \toprule
+   & \multicolumn{3}{c}{O nosso} & & \\
+  \cmidrule(lr){2-4}
+  kbit/s & DSD100 & SQAM & média & MP3 & AAC \\
+  \midrule
+  32  & 20,91 & 40,41 & \textbf{30,66} & 14,44 & 8,14 \\
+  64  & 26,21 & 48,54 & \textbf{37,38} & 17,73 & 16,75 \\
+  96  & 30,40 & 53,85 & \textbf{42,12} & 19,82 & 20,62 \\
+  128 & 33,97 & 57,98 & \textbf{45,97} & 21,64 & 25,38 \\
+  192 & 39,97 & 65,38 & \textbf{52,68} & 26,84 & 31,38 \\
+  256 & 45,21 & 72,64 & \textbf{58,92} & 37,78 & 36,04 \\
+  \bottomrule
+  \end{tabular}
+  \captionof{table}{SNR médio (dB) por débito pedido, nos 20 ficheiros de
+  treino. O AAC fica abaixo do débito pedido (de 30,3 a
+  \SI{234}{\kilo\bit\per\second}).}
+  \label{tab:lossy}
+\end{minipage}\hfill
+\begin{minipage}[b]{0.49\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{figuras/rd_lossy.png}
+  \caption{SNR médio em função do débito pedido (média dos 20 ficheiros). A
+  tracejado, as duas colecções que compõem o conjunto. O SNR não mede a
+  qualidade percebida, ver o texto.}
+  \label{fig:rd}
+\end{minipage}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+Codec & Débito real (kbit/s) & SNR (dB) & $t$ codif. (s) & $t$ descodif. (s) & Memória (MiB) \\
+\midrule
+\textbf{O nosso}      & 128,0 & 45,97 & 0,34 & 0,05 & 5,4 / 4,2 \\
+\quad versão anterior & 128,0 & 45,98 & 1,14 & 0,09 & 34,4 / 28,9 \\
+MP3 (LAME)            & 128,3 & 21,64 & 0,46 & 0,03 & 16,0 / 14,8 \\
+AAC (ffmpeg)          & 120,9 & 25,38 & 0,61 & 0,03 & 16,8 / 15,8 \\
+\bottomrule
+\end{tabular}
+\caption{Desempenho a \SI{128}{\kilo\bit\per\second}, média dos 20 ficheiros de
+treino. A memória é a máxima residente (codificação / descodificação); a versão
+anterior é a do nosso codec antes de passar a processar em fluxo.}
+\label{tab:lossy-perf}
+\end{table}
+
+
 
 % =====================================================================
-\section{Conclusões e trabalho futuro}
+\section{Conclusões}
+\label{sec:conclusoes}
 % =====================================================================
-\todo{Principais resultados e o que poderia ser melhorado.}
+O codec sem perdas fica \SI{11,1}{\percent} atrás do \prog{flac -8} em taxa
+total, e as duas causas estão identificadas, a predição linear com coeficientes
+calculados e transmitidos em cada bloco, que substituiria os preditores
+polinomiais fixos, e os dois modos de canal que faltam face aos quatro do
+\prog{flac}. O codec com perdas tem SNR muito superior ao do MP3 e do AAC, mas
+isso não é uma afirmação sobre qualidade sonora, porque o SNR mede a grandeza
+que o nosso codec minimiza e não a que os outros minimizam. Nas restantes
+grandezas o resultado é favorável. O tempo de codificação fica a par do
+\prog{flac -8}, a memória não depende da duração do áudio, o ficheiro
+reconstruído é igual ao original byte a byte mesmo com metadados, o paralelismo
+é determinista, e nenhum parâmetro do codec sem perdas é afinado à mão, à
+exceção do tamanho do bloco.
+
+A observação que mais ficou não é um número. O crescimento da memória com a
+duração do áudio só apareceu quando se mediu, já com o codec a funcionar e a
+comprimir bem, e teria passado despercebido se a avaliação se tivesse ficado
+pela taxa de compressão. O mesmo se repetiu na Parte~III, onde a redução da
+memória não custou SNR, e na medição dos tempos, que uma ronda feita com o
+processador em \texttt{powersave} chegou a inverter. Medir cedo, medir tudo o
+que é critério de avaliação, e fixar as condições da máquina antes de comparar.
 
 % =====================================================================
 \section{Manual de utilização}
+\label{sec:manual}
 % =====================================================================
-\subsection{Requisitos e instalação}
-\todo{Dependências (apt), clonar o repositório, compilar.}
+A compilação precisa do \texttt{build-essential}, do \texttt{cmake}, do
+\texttt{pkg-config} e do \texttt{libsndfile1-dev}. As comparações com o estado
+da arte precisam do \texttt{flac}, do \texttt{zstd}, do \texttt{xz-utils} e do
+\texttt{ffmpeg}, e as figuras precisam do \texttt{numpy} e do
+\texttt{matplotlib}. A partir da raiz do repositório, dois comandos compilam
+tudo, \texttt{cmake -B build -DCMAKE\_BUILD\_TYPE=Release} e
+\texttt{cmake -{}-build build -j}, e os executáveis ficam em \texttt{build/}. O
+ficheiro produzido pelo codec sem perdas não depende do número de fios de
+execução, pelo que a opção \texttt{-{}-threads} altera o tempo e não o
+resultado. Em \texttt{scripts/} ficam os \emph{scripts} de apoio, os testes aos
+25 casos-limite, as comparações com o estado da arte, o recálculo em
+\prog{numpy} e as figuras, e na raiz os dois de medição usados neste relatório,
+\texttt{medicoes\_relatorio.sh} e \texttt{varredura\_bloco.py}.
 
-\subsection{Execução dos programas}
-\todo{Sintaxe e exemplo para cada programa:
-\prog{wav\_hist}, \prog{wav\_quant}, \prog{wav\_cmp}, \prog{wav\_effects},
-\prog{wav\_lossless\_enc}/\prog{wav\_lossless\_dec},
-\prog{wav\_lossy\_enc}/\prog{wav\_lossy\_dec}.}
-
-\subsection{Reprodução dos resultados}
-\todo{Scripts de benchmark e de geração de gráficos.}
+\begin{table}[htbp]
+\centering
+\caption{Invocação dos programas.}
+\label{tab:manual}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{8.5cm} >{\raggedright\arraybackslash}p{7.0cm}}
+\toprule
+Invocação & Efeito \\
+\midrule
+\texttt{wav\_hist [-k K] [-o f.csv] in.wav canal} & Histograma de um canal, em \emph{bins} de $2^K$ valores. \\
+\texttt{wav\_cmp orig.wav mod.wav} & MSE, $L^\infty$ e SNR por canal e para o MID. \\
+\texttt{wav\_quant -b BITS [-t] in.wav out.wav} & Quantiza para BITS bits, ponto médio ou truncagem. \\
+\texttt{wav\_effects in.wav out.wav efeito [par.]} & Efeitos \texttt{echo}, \texttt{multiecho}, \texttt{am} e \texttt{vdelay}. \\
+\texttt{wav\_lossless\_enc [-b N] [-r] [-{}-threads T] in.wav comp} & Codifica sem perdas, bloco de N amostras, T fios. \\
+\texttt{wav\_lossless\_dec comp out.wav} & Descodifica e reproduz o original byte a byte. \\
+\texttt{wav\_lossy\_enc [-r KBPS | -s DB | -q PASSO] [-n N] [-z R] [-l] in.wav comp} & Codifica com perdas por débito, SNR ou passo fixo. \\
+\texttt{wav\_lossy\_dec comp out.wav} & Descodifica com perdas. \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 % =====================================================================
-\section*{Contribuição dos autores}
-\addcontentsline{toc}{section}{Contribuição dos autores}
+% BIBLIOGRAFIA
+% Retirada por agora: só entram referências efetivamente citadas no texto.
+% À medida que o texto for escrito, descomentar as que forem usadas e pôr o
+% \cite no sítio certo. Candidatas, já formatadas:
+%
+% \begin{thebibliography}{9}
+% \bibitem{princen} J.~P.~Princen e A.~B.~Bradley, \emph{Analysis/synthesis
+%   filter bank design based on time domain aliasing cancellation},
+%   IEEE Trans. ASSP, 1986.                       % citar na Secção da MDCT
+% \bibitem{sayood} K.~Sayood, \emph{Introduction to Data Compression},
+%   5.\textsuperscript{a} ed., Morgan Kaufmann, 2017.   % citar na quantização
+% \bibitem{rice} R.~F.~Rice, \emph{Some Practical Universal Noiseless Coding
+%   Techniques}, JPL Publication 79-22, 1979.     % citar na Secção do Rice
+% \bibitem{flac} Xiph.Org Foundation, \emph{FLAC --- Free Lossless Audio Codec},
+%   \url{https://xiph.org/flac/}.
+% \bibitem{sndfile} E.~de Castro Lopo, \emph{libsndfile},
+%   \url{https://libsndfile.github.io/libsndfile/}.
+% \bibitem{lame} LAME MP3 Encoder, \url{https://lame.sourceforge.io/}.
+% \bibitem{ffmpeg} FFmpeg, \url{https://ffmpeg.org/}.
+% \bibitem{zstd} Y.~Collet, \emph{Zstandard},
+%   \url{https://facebook.github.io/zstd/}.
+% \bibitem{xz} \emph{XZ Utils}, \url{https://tukaani.org/xz/}.
+% \bibitem{dsd100} A.~Liutkus \emph{et al.}, \emph{The 2016 Signal Separation
+%   Evaluation Campaign (DSD100)},
+%   \url{https://sigsep.github.io/datasets/dsd100.html}.
+% \bibitem{sqam} EBU, \emph{Sound Quality Assessment Material, Tech 3253},
+%   \url{https://tech.ebu.ch/publications/sqamcd}.
+% \end{thebibliography}
 % =====================================================================
-\todo{Percentagem e tarefas de cada membro (p.\,ex.\ 33/33/33).}
-
-% =====================================================================
-\begin{thebibliography}{9}
-\bibitem{flac} Xiph.Org Foundation, \emph{FLAC --- Free Lossless Audio Codec}, \url{https://xiph.org/flac/}.
-\bibitem{sndfile} E.~de Castro Lopo, \emph{libsndfile}, \url{https://libsndfile.github.io/libsndfile/}.
-\bibitem{sayood} K.~Sayood, \emph{Introduction to Data Compression}, 5.\textsuperscript{a} ed., Morgan Kaufmann, 2017.
-\end{thebibliography}
 
 \end{document}
