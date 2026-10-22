@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """plot_rd.py — curva débito-distorção (SNR vs. kbps) do codec com perdas vs. MP3 e AAC.
 
-Lê o CSV do scripts/benchmark_lossy.sh e desenha o SNR médio (nos ficheiros)
-para cada débito pedido, uma linha por codec.
+Lê o CSV do scripts/benchmark_lossy.sh (ou do scripts/medir_parte3.sh) e desenha o
+SNR médio nos ficheiros em função do débito real, uma linha por codec. Para o nosso
+codec desenha também, a tracejado, a média de cada coleção (DSD100 = *_mix, SQAM =
+sqam_*), porque a média dos 20 esconde uma dispersão grande.
 
 Uso: python3 scripts/plot_rd.py [-i results/benchmark_lossy.csv] [-o figura.png]
 """
@@ -10,7 +12,10 @@ import argparse
 import csv
 from collections import defaultdict
 
-import matplotlib.pyplot as plt
+import matplotlib
+
+matplotlib.use("Agg")   # só escreve o PNG, sem abrir janelas (funciona sem ambiente gráfico)
+import matplotlib.pyplot as plt  # noqa: E402
 
 # cor, marcador e nome de cada codec (cor nunca é a única pista: há rótulo e marcador)
 CODECS = {
@@ -28,11 +33,17 @@ def main():
 
     snr = defaultdict(lambda: defaultdict(list))
     kb = defaultdict(lambda: defaultdict(list))
+    col_snr = defaultdict(lambda: defaultdict(list))   # nosso codec, por coleção
+    col_kb = defaultdict(lambda: defaultdict(list))
     with open(a.i) as f:
         for r in csv.DictReader(f):
             k = int(r["kbps_pedido"])
             snr[r["codec"]][k].append(float(r["snr_dB"]))
             kb[r["codec"]][k].append(float(r["kbps_real"]))
+            if r["codec"] == "nosso":
+                col = "SQAM" if r["ficheiro"].startswith("sqam") else "DSD100"
+                col_snr[col][k].append(float(r["snr_dB"]))
+                col_kb[col][k].append(float(r["kbps_real"]))
 
     fig, ax = plt.subplots(figsize=(6.4, 4.0), dpi=150)
     fins = []
@@ -44,6 +55,13 @@ def main():
         y = [sum(snr[codec][k]) / len(snr[codec][k]) for k in ks]
         ax.plot(x, y, color=cor, marker=marc, markersize=6, linewidth=2, label=nome)
         fins.append([y[-1], x[-1], y[-1], nome])
+        if codec == "nosso" and len(col_snr) == 2:
+            for col in ("DSD100", "SQAM"):
+                cks = sorted(col_snr[col])
+                cx = [sum(col_kb[col][k]) / len(col_kb[col][k]) for k in cks]
+                cy = [sum(col_snr[col][k]) / len(col_snr[col][k]) for k in cks]
+                ax.plot(cx, cy, color=cor, linestyle="--", linewidth=1.3, alpha=0.75)
+                fins.append([cy[-1], cx[-1], cy[-1], f"Nosso, {col}"])
 
     # rótulos no fim de cada linha, afastados se ficarem a menos de 6 % da escala
     lo, hi = ax.get_ylim()
