@@ -133,10 +133,9 @@ o estado da arte especializado (\prog{flac}) e de uso geral (\prog{zstd},
 entre débito e distorção, obrigatoriamente baseado na DCT, que é a única
 restrição imposta pelo enunciado, comparado com o MP3 e o AAC.
 
-Nos 20 ficheiros de treino o codec sem perdas obtém uma taxa de compressão total
-de \num{2,28} contra \num{2,57} do \prog{flac -8}, fica a par dele no tempo de
-codificação, usa \SI{4,8}{MiB} de memória independentemente do tamanho do
-ficheiro e reproduz o original byte a byte. O codec com perdas obtém entre 34 e
+Nos 20 ficheiros de treino o codec sem perdas fica \SI{11}{\percent} atrás do
+\prog{flac -8} em taxa, a par dele no tempo de codificação, e com memória que
+não depende da duração do áudio. O codec com perdas obtém entre 34 e
 \SI{58}{\decibel} de SNR a \SI{128}{\kilo\bit\per\second}, conforme a coleção,
 mas como o SNR mede o erro quadrático, que é a grandeza minimizada pelo codec, a
 comparação com o MP3 e o AAC avalia objetivos distintos e não permite concluir
@@ -200,22 +199,25 @@ equipa docente, com cabeçalho canónico de \num{44}~bytes e sem blocos de
 metadados.
  
 A avaliação final corre num conjunto cego de 10 faixas, 5 de cada coleção, o que
-exclui afinar parâmetros ao conjunto de treino. As duas coleções têm
-compressibilidade muito diferente, pelo que os resultados deste relatório são
-dados também por coleção e não apenas em média.
+exclui afinar parâmetros ao conjunto de treino, e como as duas coleções têm
+compressibilidade muito diferente, os resultados são dados também por coleção.
  
 
 \subsection{Metodologia de medição e verificação}
 \label{sec:metodo}
-Todas as medições foram feitas na mesma máquina e na mesma sessão: AMD Ryzen~7
-6800H com 16 núcleos lógicos, \SI{14,9}{GiB} de RAM, Linux 7.0.0, g++ 13.3.0 e
-CMake 3.28.3, com os programas compilados em \texttt{Release} com \texttt{-O2};
-as comparações usam \prog{flac} 1.4.3. Os tempos e o pico de memória vêm do melhor de três execuções.
+As medições das Partes~I e~II foram feitas na mesma máquina e na mesma sessão,
+num AMD Ryzen~7 6800H com 16 núcleos lógicos, \SI{14,9}{GiB} de RAM, Linux
+7.0.0, g++ 13.3.0 e CMake 3.28.3, compilados em \texttt{Release} com
+\texttt{-O2}, e as comparações usam o \prog{flac} 1.4.3. Os tempos e o pico de
+memória vêm do melhor de três execuções. Os tempos e a memória da Parte~III
+foram medidos noutra máquina do grupo, pelo que os seus valores absolutos não
+são comparáveis com os das Partes~I e~II, ao contrário do SNR e das taxas, que
+não dependem da máquina.
 
 O \emph{governor} do CPU foi fixado em \texttt{performance}.
 Em \texttt{powersave} o processador corria a \SIrange{1,1}{1,36}{\giga\hertz} e
-uma ronda inteira de medições chegou a inverter a conclusão sobre qual das
-versões do codec era mais rápida.
+uma ronda inteira chegou a inverter a conclusão sobre qual das versões era mais
+rápida.
 
 As taxas de compressão aparecem em duas convenções. A taxa \emph{total} é a soma
 dos tamanhos originais a dividir pela soma dos comprimidos e a taxa \emph{média} é
@@ -237,11 +239,11 @@ são os testes unitários \prog{test\_midside}, \prog{test\_bitstream},
 conservação de energia na MDCT) em vez de valores tabelados, pelo que
 permanecem válidos para qualquer entrada. O quarto é uma bateria de 25
 casos-limite do codec sem perdas, que cobre ficheiros mono e de 8, 16, 24 e
-\num{32}~bits, ficheiros de 1, 2 e 5 \emph{frames}, bloco \texttt{data} com
-número ímpar de bytes, contentores com metadados, cabeçalhos que declaram mais
-dados do que existem, blocos de 16 a \num{65535} amostras, silêncio total,
-canais idênticos, um canal em silêncio, tom puro e onda saturada, bem como a
-recusa de ficheiros comprimidos truncados ou aleatórios. Os 25 casos passam.
+\num{32}~bits, ficheiros de 1 a 5 \emph{frames}, contentores com metadados ou
+com cabeçalhos que declaram mais dados do que existem, blocos de 16 a
+\num{65535} amostras, sinais degenerados (silêncio, tom puro, onda saturada,
+canais idênticos) e a recusa de ficheiros comprimidos truncados ou aleatórios.
+Os 25 casos passam.
 
 O \prog{wav\_cmp} e os dois codecs calculam o erro com o mesmo código, pelo que
 os valores apresentados nas três partes são comparáveis entre si.
@@ -253,16 +255,16 @@ os valores apresentados nas três partes são comparáveis entre si.
 
 \subsection{\prog{wav\_hist}: histogramas e análise}
 \label{sec:hist}
-O \prog{wav\_hist} conta as ocorrências de cada valor e escreve um CSV; o
+O \prog{wav\_hist} conta as ocorrências de cada valor e escreve um CSV, e o
 gráfico é feito em Python, pelo critério da Secção~\ref{sec:arquitetura}.
-Analisam-se quatro canais: L, R, $\mathrm{MID} = \lfloor (L+R)/2 \rfloor$ e a
+Analisam-se quatro canais, que são L, R, $\mathrm{MID} = \lfloor (L+R)/2 \rfloor$ e a
 diferença média $(L-R)/2$, que é a pedida no enunciado e não coincide com o SIDE
 do codec da Secção~\ref{sec:parte2}, que é $L-R$.
 
 As contagens podem ser agrupadas em \emph{bins} de $2^k$ valores por truncagem
-dos $k$ bits baixos; a Tabela~\ref{tab:entropia} usa $k=0$, porque agrupar
+dos $k$ bits baixos. A Tabela~\ref{tab:entropia} usa $k=0$, porque agrupar
 símbolos reduz a entropia, e a Figura~\ref{fig:hist} usa $k=8$. A divisão por
-dois é inteira, mas a reconstrução continua exata: $L+R$ e $L-R$ têm a mesma
+dois é inteira, mas a reconstrução continua exata, porque $L+R$ e $L-R$ têm a mesma
 paridade, pelo que $L+R = 2\,\mathrm{MID} + (\mathrm{SIDE} \mathbin{\&} 1)$.
 Isto responde à nota de rodapé~2 do enunciado e foi verificado em milhares de
 pares $(L,R)$ e em todas as amostras dos ficheiros de teste.
@@ -272,7 +274,7 @@ forma que fundamenta a escolha de Golomb/Rice na Secção~\ref{sec:rice}. A
 diferença média tem sempre menor desvio padrão do que L e R, com margens de
 \num{1,6} a \num{129} vezes conforme o material, e a transformação poupa
 \num{1,59} bits por \emph{frame} no DSD100 e \num{2,26} no SQAM. O par MID/SIDE
-sai mais barato nos 20 ficheiros, sem exceção; ainda assim o modo é decidido por
+sai mais barato nos 20 ficheiros, sem exceção, mas o modo é decidido por
 bloco, porque a entropia por ficheiro é uma média que não distingue os trechos
 em que os canais divergem.
 
@@ -280,7 +282,7 @@ Estas entropias são de ordem zero e tratam cada amostra como independente das
 anteriores, pelo que não veem a correlação temporal. Embaralhar o ficheiro não
 altera o histograma, mas destrói a compressibilidade. A última coluna da
 Tabela~\ref{tab:entropia} permitiria \num{1,25} no DSD100 e \num{1,46} no SQAM,
-e o codec da Parte~II obtém \num{1,77} e \num{2,90}; a diferença mede o que vem
+e o codec da Parte~II obtém \num{1,77} e \num{2,90}, e a diferença mede o que vem
 da modelação temporal e não contraria o limite de Shannon, que se aplica ao
 modelo com que foi calculado.
 
@@ -311,7 +313,7 @@ Média SQAM & 10,92 & 10,93 & 10,88 & 8,71 & 2706 & 672 & 1,46 \\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.64\linewidth]{figuras/hist_parte1.png}
+\includegraphics[width=0.58\linewidth]{figuras/hist_parte1.png}
 \caption{Histogramas de L, R, MID e $(L-R)/2$ do \texttt{062\_mix}, em
 \emph{bins} de $2^8$ valores e escala logarítmica em $y$, onde o decaimento
 linear dos flancos corresponde a contagens com decaimento exponencial. Com o
@@ -323,20 +325,20 @@ e R.}
 \subsection{\prog{wav\_cmp}: métricas de erro}
 \label{sec:cmp}
 Para cada canal e para o MID, o programa calcula o erro quadrático médio (norma
-$L^2$), o erro máximo por amostra (norma $L^\infty$) e a relação sinal-ruído:
+$L^2$), o erro máximo por amostra (norma $L^\infty$) e a relação sinal-ruído,
+dada por
 \begin{equation}
   \mathrm{SNR} = 10\log_{10}\frac{\sum_n x[n]^2}{\sum_n \left(x[n]-\tilde{x}[n]\right)^2}\ \text{dB}
 \end{equation}
-As três métricas são complementares e nenhuma dispensa as outras. O MSE descreve
-o comportamento médio, mas dilui o pior caso entre milhões de amostras; o
-$L^\infty$ expõe a amostra isolada mais errada, audível como um estalido e que o
-MSE esconde; o SNR normaliza o erro pela energia do sinal, o que permite
-comparar ficheiros com volumes diferentes. Os valores são dados para L, para R e
-para o MID, que é o canal médio pedido no enunciado. A acumulação é feita em
-vírgula flutuante de dupla precisão, porque a soma dos quadrados excede a gama
-de um inteiro de \SI{32}{bits}.
+As três métricas são complementares. O MSE descreve o comportamento médio mas
+dilui o pior caso entre milhões de amostras, o $L^\infty$ expõe a amostra
+isolada mais errada, audível como um estalido, e o SNR normaliza o erro pela
+energia do sinal, o que permite comparar ficheiros com volumes diferentes. Os
+valores são dados para L, para R e para o MID, que é o canal médio pedido no
+enunciado, e a acumulação é feita em vírgula flutuante de dupla precisão, porque
+a soma dos quadrados excede a gama de um inteiro de \SI{32}{bits}.
 
-Este programa é o instrumento de medida das Partes~II e~III: um erro aqui não
+Este programa é o instrumento de medida das Partes~II e~III. Um erro aqui não
 afetaria uma secção, afetaria todos os números do relatório. É essa a razão de
 as suas saídas terem sido recalculadas de forma independente em \prog{numpy}
 (Secção~\ref{sec:metodo}).
@@ -395,7 +397,6 @@ Bits & $\Delta$ & teórico ($\Delta^2/12$) & medido & razão & $L^\infty$ medido
 \midrule
 16 & 1     & 0                & 0                & ---    & 0      & $\infty$ & $\infty$ \\
 12 & 16    & \num{21,3}       & \num{25,9}       & 1,21   & 8      & 53,93    & 49,53 \\
-10 & 64    & \num{341,3}      & \num{423,6}      & 1,24   & 32     & 41,79    & 37,16 \\
 8  & 256   & \num{5461}       & \num{6969}       & 1,28   & 128    & 29,64    & 25,02 \\
 6  & 1024  & \num{87381}      & \num{121816}     & 1,39   & 512    & 17,23    & 12,88 \\
 4  & 4096  & \num{1398101}    & \num{2229191}    & 1,59   & 2048   & 4,64     & 0,62 \\
@@ -412,18 +413,17 @@ medido e o teórico vem do silêncio digital, explicado no texto.}
 \label{sec:effects}
 O \prog{wav\_effects} aplica quatro efeitos, todos descritos por equações às
 diferenças sobre as amostras. O eco simples é $y[n] = x[n] + a\,x[n-D]$, uma
-única repetição atenuada. Os ecos múltiplos usam realimentação,
+única repetição atenuada, e os ecos múltiplos usam realimentação,
 $y[n] = x[n] + a\,y[n-D]$, o que exige $|a| < 1$ para a saída não divergir. A
-modulação de amplitude é $y[n] = x[n]\,(1 + m\cos(2\pi f n / f_s))$. O quarto
+modulação de amplitude é $y[n] = x[n]\,(1 + m\cos(2\pi f n / f_s))$, e o quarto
 efeito é um atraso variável no tempo, em que a posição a ler cai entre duas
 amostras e é obtida por interpolação linear. Os atrasos são indicados em
 milissegundos e as frequências em hertz, convertidos para amostras pela taxa de
-amostragem do ficheiro.
+amostragem do ficheiro. A implementação foi validada com um impulso, porque à
+entrada de um único valor não nulo a saída do eco com realimentação apresenta
+impulsos em $D$, $2D$ e $3D$ com amplitudes $a$, $a^2$ e $a^3$, o que confirma o
+atraso e o fator de atenuação sem recorrer à audição.
 
-A implementação foi validada com um impulso: à entrada de um único valor não
-nulo, a saída do eco com realimentação apresenta impulsos em $D$, $2D$,
-$3D$\ldots com amplitudes $a$, $a^2$, $a^3$\ldots, o que confirma o atraso e o
-fator de atenuação sem recorrer à audição.
 % =====================================================================
 \section{Parte II --- Codec de áudio sem perdas}
 \label{sec:parte2}
@@ -432,12 +432,14 @@ O codec remove redundância em andares reversíveis, pelo que a saída do
 descodificador é igual à entrada do codificador por construção e não por
 aproximação. Nenhum parâmetro da codificação é fixado à mão. O modo de canais, a
 ordem do preditor, o número de partições de Rice e o $k$ de cada uma são
-escolhidos bloco a bloco, por minimização do custo real em bits.
+escolhidos bloco a bloco, por minimização do custo real em bits. A
+Figura~\ref{fig:lossless-blocos} mostra a cadeia e o que circula entre os
+andares.
 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
-    scale=0.92, transform shape,
+    scale=0.88, transform shape,
     font=\small,
     bloco/.style={draw, rounded corners=2pt, align=center, minimum height=1.15cm,
                   text width=2.0cm, inner sep=2pt, fill=blue!6, font=\scriptsize},
@@ -506,13 +508,12 @@ A preservação do contentor foi o problema mais instrutivo desta parte. A
 primeira versão escrevia a saída com a \texttt{libsndfile}, que produz um
 cabeçalho mínimo, e o \prog{wav\_cmp} dava erro nulo nas amostras enquanto o
 \prog{cmp} falhava. Foi essa contradição que localizou o problema fora do codec,
-nos blocos de metadados que se perdiam, e a solução foi guardar os bytes
-anteriores e posteriores ao bloco \texttt{data} e reescrevê-los literalmente. A
-visibilidade desta propriedade é, no entanto, limitada. Os ficheiros oficiais
-foram normalizados e têm cabeçalho canónico de \num{44}~bytes sem metadados,
-pelo que o \prog{flac} também passa o \prog{cmp} neles. O codec distingue-se
-apenas em ficheiros com metadados, onde guardar o contentor custava \num{5766}
-bytes contra os \num{44} atuais.
+nos blocos de metadados que se perdiam, e a solução foi guardar os bytes em volta
+do bloco \texttt{data} e reescrevê-los literalmente. A visibilidade desta
+propriedade é limitada, porque os ficheiros oficiais têm cabeçalho canónico de
+\num{44}~bytes sem metadados e o \prog{flac} também passa o \prog{cmp} neles. O
+codec distingue-se apenas em contentores com metadados, onde guardá-los custava
+\num{5766} bytes contra os \num{44} atuais.
 
 \subsection{Descorrelação entre canais e predição temporal}
 \label{sec:pred}
@@ -748,7 +749,7 @@ percorre a cadeia em sentido inverso, um bloco de cada vez.
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
-    scale=0.92, transform shape,
+    scale=0.88, transform shape,
     font=\small,
     bloco/.style={draw, rounded corners=2pt, align=center, minimum height=1.15cm,
                   text width=2.0cm, inner sep=2pt, fill=blue!6, font=\scriptsize},
@@ -793,9 +794,8 @@ percorre a cadeia em sentido inverso, um bloco de cada vez.
   \node[rot, below=0.02cm of $(mdct.south)!0.5!(q.south)$] {coefs.};
   \node[rot, below=0.02cm of $(q.south)!0.5!(ac.south)$] {inteiros $q$};
 \end{tikzpicture}
-\caption{Diagrama de blocos do codec com perdas. Em cima, o codificador
-(\prog{wav\_lossy\_enc}); em baixo, o descodificador (\prog{wav\_lossy\_dec}).
-A quantização, a laranja, é a única etapa com perdas.}
+\caption{Codec com perdas, com o codificador em cima e o descodificador em
+baixo. A quantização, a laranja, é a única etapa com perdas.}
 \label{fig:lossy-blocos}
 \end{figure}
 
@@ -803,15 +803,15 @@ A quantização, a laranja, é a única etapa com perdas.}
 \label{sec:mdct}
 Aplicar a DCT-II a blocos independentes, como faz o JPEG com blocos de
 $8 \times 8$ píxeis, cria descontinuidades nas fronteiras, porque cada bloco é
-quantizado separadamente. Usámos por isso a MDCT: blocos de
+quantizado separadamente. Usámos por isso a MDCT, em que blocos de
 $2N$ amostras com sobreposição de metade, multiplicados por uma janela seno,
-que produzem $N$ coeficientes cada (amostragem crítica). O \emph{aliasing}
+produzem $N$ coeficientes cada (amostragem crítica). O \emph{aliasing}
 de cada bloco é cancelado pelo seguinte (TDAC), e a reconstrução sem
 quantização é perfeita.
 
 A MDCT é calculada como uma DCT-IV do bloco ``dobrado'', obtida por uma FFT de
 $N/2$ pontos, em $O(N\log N)$. Com a janela seno e a escala $\sqrt{2/N}$, a
-transformada é ortonormal: o erro de quantização nos coeficientes é igual ao
+transformada é ortonormal, pelo que o erro de quantização nos coeficientes é igual ao
 erro no áudio, o que permite controlar o SNR no domínio dos coeficientes.
 Adotou-se $N = 2048$ (janela de \SI{93}{\milli\second}), escolhido por
 experiência (Secção~\ref{sec:lossy-exp}). O \prog{test\_mdct} confirma, para $N$
@@ -821,9 +821,9 @@ nível da precisão numérica.
 
 A janela seno, $w[n] = \sin\!\big(\pi(n+\tfrac12)/2N\big)$, foi escolhida por
 cumprir a condição de Princen-Bradley, $w[n]^2 + w[n+N]^2 = 1$, que decorre de
-$\sin^2 + \cos^2 = 1$: é ela que faz o TDAC cancelar o \emph{aliasing} e que torna
+$\sin^2 + \cos^2 = 1$. É ela que faz o TDAC cancelar o \emph{aliasing} e que torna
 a transformada ortonormal, e a janela seno é a mais simples que a cumpre. Pela
-mesma razão, em estéreo usa-se $M = (L+R)/\sqrt2$ e $S = (L-R)/\sqrt2$: ao
+mesma razão, em estéreo usa-se $M = (L+R)/\sqrt2$ e $S = (L-R)/\sqrt2$. Ao
 contrário do MID/SIDE inteiro e exatamente reversível do codec sem perdas
 (Secção~\ref{sec:pred}), aqui a exatidão inteira não serve, porque os
 coeficientes vão ser quantizados; o que importa é a ortonormalidade, que mantém
@@ -843,14 +843,14 @@ descodificador como $\hat{X} = q\,\Delta$, com
   q = \operatorname{sinal}(X)\,\big\lfloor |X|/\Delta + z \big\rfloor .
 \end{equation}
 Esta é a única etapa com perdas do codec. Usa-se o mesmo $\Delta$ em todos os
-coeficientes: como a MDCT e o MID/SIDE são ortonormais, o erro no áudio é a
+coeficientes. Como a MDCT e o MID/SIDE são ortonormais, o erro no áudio é a
 soma dos erros nos coeficientes, e para minimizar essa soma com um dado número
 de bits o erro deve ser igual em todos eles. É aqui que o codec
 difere do MP3 e do AAC, que variam o passo por banda de frequência segundo um
 modelo do ouvido. Um único parâmetro controla assim todo o compromisso entre
 débito e distorção.
 
-O parâmetro $z$ define uma zona morta: com $z = 0{,}5$ obtém-se o
+O parâmetro $z$ define uma zona morta. Com $z = 0{,}5$ obtém-se o
 arredondamento ao inteiro mais próximo; com $z < 0{,}5$, valores próximos de um
 limiar passam para o nível de menor módulo, em particular para zero. Isto
 aumenta ligeiramente o erro, mas poupa muitos bits, porque o zero é o valor
@@ -863,37 +863,37 @@ Adotou-se $z = 0{,}40$, que ganha \SI{0,35}{\decibel} a
 (Secção~\ref{sec:lossy-exp}); com ele ficam a zero, em média,
 \SI{86}{\percent} e \SI{73}{\percent} dos coeficientes, respetivamente.
 
-$N$ e $z$ são os únicos parâmetros fixos do codec e foram escolhidos por
+$N$ e $z$ são os únicos parâmetros fixos que afetam o compromisso entre débito
+e distorção, e foram escolhidos por
 varredura nos ficheiros de treino, o que exige cuidado com a especialização. Em
-ambos o máximo é interior e a curva é plana à sua volta: $z = 0{,}35$ e $0{,}45$
+ambos o máximo é interior e a curva é plana à sua volta. Os valores $z = 0{,}35$ e $0{,}45$
 ficam a menos de \SI{0,12}{\decibel} do máximo, e $z = 0{,}40$ está a menos de
 \SI{0,1}{\decibel} do melhor valor em 39 dos 40 casos (ficheiro~$\times$~débito),
 pelo que não há um pico estreito em que sobreajustar. Entre $N = 1024$ e $2048$ a
 diferença é de \SI{0,03}{\decibel} a \SI{128}{\kilo\bit\per\second}, mas o melhor
 $N$ varia muito de ficheiro para ficheiro. Além disso, o critério de escolha foi o
 SNR, que não penaliza o pré-eco (o espalhamento do erro para antes de um ataque,
-mais audível com janelas longas): favorece, por isso, janelas mais longas do que
+mais audível com janelas longas). Favorece, por isso, janelas mais longas do que
 as que um critério perceptual escolheria.
 
 
 \subsection{Codificação entrópica e controlo de débito}
 \label{sec:lossy-ent}
-Após a quantização, a maioria dos coeficientes é nula (\SI{73}{\percent} a
-\SI{128}{\kilo\bit\per\second} e \SI{86}{\percent} a \SI{64}{\kilo\bit\per\second}).
-Por isso não se reutilizou o código de Rice da Parte~II: gasta pelo menos um bit
+Após a quantização, a maioria dos coeficientes é nula, nas proporções dadas na
+Secção~\ref{sec:lossy-quant}. Por isso não se reutilizou o código de Rice da Parte~II, porque gasta pelo menos um bit
 por valor, mesmo nulo, e com \num{88200} coeficientes por segundo esse bit
 obrigatório custaria sozinho \SI{88}{\kilo\bit\per\second}, mais do que o débito
-alvo de \SI{64}{\kilo\bit\per\second}: o código nem conseguiria atingir o alvo.
+alvo de \SI{64}{\kilo\bit\per\second}. O código nem conseguiria atingir o alvo.
 Com o mesmo $\Delta$, o ficheiro seria em média $3{,}45$ e $2{,}56$ vezes maior
 (Tabela~\ref{tab:lossy-exp}). Usou-se um codificador aritmético binário
-adaptativo, em que cada decisão custa $-\log_2 p$ bits: um zero previsível custa
+adaptativo, em que cada decisão custa $-\log_2 p$ bits, pelo que um zero previsível custa
 uma fração de bit. As probabilidades adaptam-se durante a codificação (o
-descodificador repete as mesmas atualizações) e dependem de 48 contextos: seis
-zonas de frequência, em escala logarítmica, combinadas com oito níveis de
+descodificador repete as mesmas atualizações) e dependem de 48 contextos, que
+resultam de seis zonas de frequência, em escala logarítmica, combinadas com oito níveis de
 amplitude dos coeficientes vizinhos (os dois anteriores do mesmo bloco e os da
 mesma frequência no bloco anterior).
 
-O débito é controlado pelo passo $\Delta$: \texttt{-q} usa um passo fixo,
+O débito é controlado pelo passo $\Delta$. A opção \texttt{-q} usa um passo fixo,
 \texttt{-r} procura o passo que atinge um débito (por omissão
 \SI{128}{\kilo\bit\per\second}) e \texttt{-s} o que atinge um SNR. A procura estima
 $\Delta$ numa amostra de 48 blocos e afina-o com duas a quatro passagens pelo
@@ -908,26 +908,27 @@ variando um parâmetro de cada vez, mantendo os restantes nos valores adotados.
 Cada bloco compara apenas valores do mesmo parâmetro, pelo que os números não são
 comparáveis entre blocos.
 
-\emph{Tamanho do bloco $N$ (referência: os outros tamanhos).} Em média, $N=2048$
+\emph{Tamanho do bloco $N$ (comparado com os outros tamanhos).} Em média, $N=2048$
 é o melhor nos dois débitos, mas a vantagem sobre $N=1024$ é de
 \SI{0,28}{\decibel} a \SI{64}{\kilo\bit\per\second} e de apenas
 \SI{0,03}{\decibel} a \SI{128}{\kilo\bit\per\second}, que não é significativa;
 nas misturas do DSD100, $N=1024$ é ligeiramente melhor. Ficheiro a ficheiro, o
-melhor $N$ varia muito: nenhum valor fica a menos de \SI{0,1}{\decibel} do melhor
+melhor $N$ varia muito. Nenhum valor fica a menos de \SI{0,1}{\decibel} do melhor
 em mais de 13 dos 40 casos (ficheiro~$\times$~débito). $N=2048$ é, portanto, um
 compromisso médio, e escolher $N$ por ficheiro ganharia em média
-\SI{0,50}{\decibel} e \SI{0,64}{\decibel} (trabalho futuro).
+\SI{0,50}{\decibel} e \SI{0,64}{\decibel}, ao custo de transmitir essa
+escolha e de uma segunda passagem pelo sinal.
 
-\emph{Zona morta $z$ (referência: arredondamento normal, $z=0{,}5$).} O valor
+\emph{Zona morta $z$ (comparada com o arredondamento normal, $z=0{,}5$).} O valor
 $z=0{,}40$ ganha \SI{0,35}{\decibel} e \SI{0,28}{\decibel}. É também a escolha
-mais robusta: fica a menos de \SI{0,1}{\decibel} do melhor $z$ em 39 dos 40
+mais robusta, porque fica a menos de \SI{0,1}{\decibel} do melhor $z$ em 39 dos 40
 casos, e o máximo está no mesmo ponto nas duas coleções e nos dois débitos.
 
-\emph{Modo de canais (referência: L/R).} O MID/SIDE ortonormal ganha
+\emph{Modo de canais (comparado com L/R).} O MID/SIDE ortonormal ganha
 \SI{1,44}{\decibel} e \SI{1,71}{\decibel}, e é melhor ou igual em 38 dos 40
 casos.
 
-\emph{Codificador entrópico (referência: o codificador aritmético, com o mesmo
+\emph{Codificador entrópico (comparado com o codificador aritmético, com o mesmo
 $\Delta$).} Com um código de Rice com o melhor parâmetro por bloco e por canal,
 o ficheiro seria em média $3{,}45$ vezes maior a \SI{64}{\kilo\bit\per\second}
 e $2{,}56$ vezes a \SI{128}{\kilo\bit\per\second} (Secção~\ref{sec:lossy-ent}).
@@ -935,7 +936,7 @@ e $2{,}56$ vezes a \SI{128}{\kilo\bit\per\second} (Secção~\ref{sec:lossy-ent})
 Para evitar especializar o codec nos ficheiros de treino, como a equipa docente
 recomenda, escolheram-se valores que são os melhores nas duas coleções e que já
 o eram nos sete ficheiros preliminares usados no início do trabalho, e o modelo
-de contexto é adaptativo: aprende cada ficheiro desde o início, sem tabelas
+de contexto é adaptativo. Aprende cada ficheiro desde o início, sem tabelas
 treinadas.
 
 \begin{table}[htbp]
@@ -979,7 +980,7 @@ O codec foi comparado com o MP3 (codificador LAME) e com o AAC (codificador nati
 do \texttt{ffmpeg}), em débito constante, a 32, 64, 96, 128, 192 e
 \SI{256}{\kilo\bit\per\second}, nos 20 ficheiros. Os ficheiros descodificados
 foram acertados ao número de amostras do original e o SNR foi medido com o
-\prog{wav\_cmp}. O alinhamento temporal foi verificado por correlação cruzada: o
+\prog{wav\_cmp}. O alinhamento temporal foi verificado por correlação cruzada. O
 atraso ótimo é zero para os dois codificadores. Esta verificação é necessária,
 porque um desfasamento de uma única amostra baixa o SNR do MP3 em 6 a
 \SI{7}{\decibel}, o que inflacionaria artificialmente a nossa vantagem. Quanto ao
@@ -988,11 +989,11 @@ exemplo, \SI{234}{\kilo\bit\per\second} quando se pedem 256), o que o desfavorec
 um pouco; o nosso fica a menos de \SI{0,05}{\percent} do alvo.
 
 O nosso codec tem SNR mais alto em todos os débitos
-(Tabela~\ref{tab:lossy} e Figura~\ref{fig:rd}): a \SI{128}{\kilo\bit\per\second},
-\SI{45,97}{\decibel} contra \SI{21,64}{\decibel} do MP3 e \SI{25,38}{\decibel} do
+(Tabela~\ref{tab:lossy} e Figura~\ref{fig:rd}). A \SI{128}{\kilo\bit\per\second}
+obtém \SI{45,97}{\decibel} contra \SI{21,64}{\decibel} do MP3 e \SI{25,38}{\decibel} do
 AAC. Uma diferença de \SI{24}{\decibel} equivale a cerca de 4~bits de precisão
 efetiva ($\approx\SI{6}{\decibel}$ por bit) ou a uma energia do erro cerca de 250
-vezes menor. A média esconde uma grande dispersão entre coleções: as gravações do
+vezes menor. A média esconde uma grande dispersão entre coleções. As gravações do
 SQAM, instrumentos isolados com muito silêncio, ficam \SIrange{20}{27}{\decibel}
 acima das misturas densas do DSD100 em todos os débitos. Quanto ao desempenho
 (Tabela~\ref{tab:lossy-perf}), a \SI{128}{\kilo\bit\per\second} o nosso codificador
@@ -1003,20 +1004,20 @@ guardava o ficheiro inteiro em memória, a codificação ficou 3 vezes mais ráp
 a memória desceu de \SI{34}{\mebi\byte} (até \SI{67}{\mebi\byte}) para
 \SI{5,4}{\mebi\byte}, sem alterar o SNR.
 
-Esta diferença de SNR \emph{não} permite concluir que o nosso codec soa melhor:
-o SNR favorece-o por construção. O nosso codificador minimiza o erro quadrático,
+Esta diferença de SNR \emph{não} permite concluir que o nosso codec soa melhor.
+O SNR favorece-o por construção. O nosso codificador minimiza o erro quadrático,
 que é exatamente o que o SNR mede, enquanto o MP3 e o AAC distribuem o erro segundo
 um modelo psicoacústico e colocam-no onde o ouvido não o deteta, o que degrada
-deliberadamente o SNR em troca de audibilidade. Os espectrogramas confirmam a
-diferença: a \SI{32}{\kilo\bit\per\second}, o MP3 elimina tudo acima de cerca de
-\SI{5,5}{\kilo\hertz}, enquanto o nosso codec mantém conteúdo até cerca de
-\SI{17}{\kilo\hertz} mas com muitos coeficientes anulados, que se ouvem como um
-som metálico. Num teste de audição a débitos baixos o resultado seria
+deliberadamente o SNR em troca de audibilidade. A audição confirma a diferença
+de estratégia. A \SI{32}{\kilo\bit\per\second} o nosso codec perde os agudos e
+introduz um som metálico, próprio de anular a maior parte dos coeficientes de
+alta frequência, enquanto o MP3 limita a banda e coloca o ruído onde não se
+ouve. Num teste de audição a débitos baixos o resultado seria
 provavelmente o inverso. A comparação serve, por isso, para verificar que o
 controlo de débito atinge o alvo e que a relação débito--distorção é monótona, e
 não como medida de qualidade percebida, que exigiria testes de audição ou
 métricas perceptuais. Note-se ainda que o enunciado refere \emph{distortion
-measures}, no plural: a métrica da avaliação final pode não ser só o SNR.
+measures}, no plural, pelo que a métrica da avaliação final pode não ser só o SNR.
 
 \begin{figure}[htbp]
 \centering
@@ -1039,8 +1040,7 @@ measures}, no plural: a métrica da avaliação final pode não ser só o SNR.
   \bottomrule
   \end{tabular}
   \captionof{table}{SNR médio (dB) por débito pedido, nos 20 ficheiros de
-  treino. O AAC fica abaixo do débito pedido (de 30,3 a
-  \SI{234}{\kilo\bit\per\second}).}
+  treino. O AAC fica abaixo do pedido, de 30,3 a \SI{234}{\kilo\bit\per\second}.}
   \label{tab:lossy}
 \end{minipage}\hfill
 \begin{minipage}[b]{0.49\linewidth}
@@ -1067,8 +1067,8 @@ AAC (ffmpeg)          & 120,9 & 25,38 & 0,61 & 0,03 & 16,8 / 15,8 \\
 \bottomrule
 \end{tabular}
 \caption{Desempenho a \SI{128}{\kilo\bit\per\second}, média dos 20 ficheiros de
-treino. A memória é a máxima residente (codificação / descodificação); a versão
-anterior é a do nosso codec antes de passar a processar em fluxo.}
+treino, com a memória máxima residente (codificação e descodificação). A versão
+anterior é a nossa, antes de processar em fluxo.}
 \label{tab:lossy-perf}
 \end{table}
 
@@ -1112,7 +1112,7 @@ tudo, \texttt{cmake -B build -DCMAKE\_BUILD\_TYPE=Release} e
 \texttt{cmake -{}-build build -j}, e os executáveis ficam em \texttt{build/}. O
 ficheiro produzido pelo codec sem perdas não depende do número de fios de
 execução, pelo que a opção \texttt{-{}-threads} altera o tempo e não o
-resultado. Em \texttt{scripts/} ficam os \emph{scripts} de apoio, os testes aos
+resultado. A Tabela~\ref{tab:manual} resume a invocação de cada programa. Em \texttt{scripts/} ficam os \emph{scripts} de apoio, os testes aos
 25 casos-limite, as comparações com o estado da arte, o recálculo em
 \prog{numpy} e as figuras, e na raiz os dois de medição usados neste relatório,
 \texttt{medicoes\_relatorio.sh} e \texttt{varredura\_bloco.py}.

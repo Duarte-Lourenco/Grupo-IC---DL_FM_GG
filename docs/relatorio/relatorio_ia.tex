@@ -14,23 +14,7 @@
 %    * Cada caso tem de ser verificável: um número, um teste, um commit, um
 %      ficheiro. Nada de "a IA ajudou muito" sem dizer em quê.
 %    * Pelo menos um caso por secção em que a IA ERROU ou foi corrigida.
-%      Um relatório só com sucessos não é uma avaliação crítica.
-%    * "O que aprendemos" é escrito por quem fez a tarefa, pelas suas palavras.
-%    * Coerente com o Relatório 1 e com o histórico do Git: os números e as
-%      decisões têm de ser os mesmos.
-%
-%  ORÇAMENTO DE PÁGINAS (alvo 4,5)
-%    Introdução .................. 0,35    Parte 4: código ........... 1,00
-%    Ferramentas e método ........ 0,40    Parte 5: testes ........... 0,90
-%    Parte 3: estruturação ....... 0,50    Parte 6: relatório ........ 0,50
-%    Avaliação crítica ........... 0,60    Conclusões ................ 0,25
-%  Se faltar espaço, cortar por esta ordem: 2.º caso da estruturação,
-%  2.º caso do relatório, Tabela 2. Nunca cortar os casos em que a IA errou.
-%
-%  MARCADORES (remover todos antes de entregar):
-%    \todo{...}  instrução de escrita ..................... VERMELHO
-%    \sug{...}   sugestão de conteúdo, tirada do Git
-%                e do Relatório 1, a confirmar ............ AZUL
+%    * Pontuação: só vírgulas, pontos finais e parênteses.
 % =====================================================================
 \documentclass[a4paper,11pt]{article}
 
@@ -52,18 +36,11 @@
 \hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
 \setlist{nosep,leftmargin=*}
 
-% --- Marcadores (remover todos antes da entrega) ---
-\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO:} #1\textbf{]}}}
-\newcommand{\sug}[1]{\textcolor{blue!70!black}{\textit{[Sugestão: #1]}}}
 \newcommand{\prog}[1]{\texttt{#1}}
 
 % ---------------------------------------------------------------------
-% Caso de utilização, em formato compacto (cabe muito mais por página do
-% que uma lista "description"). Os seis campos respondem, por ordem, às
-% seis perguntas do enunciado.
-%   \caso{Título}{Ferramenta}{Membro}
-%   \problema{...} \proposta{...} \verificacao{...}
-%   \correto{...} \alteracoes{...} \aprendizagem{...}
+% Caso de utilização. Os seis campos respondem, por ordem, às seis
+% perguntas do enunciado.
 % ---------------------------------------------------------------------
 \newcommand{\caso}[3]{%
   \par\medskip\noindent\textbf{#1}\hfill{\small\textit{#2 --- #3}}\par\nopagebreak\smallskip}
@@ -91,11 +68,10 @@
 \section{Introdução}
 \label{sec:intro}
 % =====================================================================
-% ~0,35 página.
 Este relatório descreve o uso de ferramentas de Inteligência Artificial (IA) no
 primeiro trabalho prático e avalia criticamente a sua eficácia. A IA foi usada
-em quatro frentes: no planeamento e na estruturação do trabalho, na produção de
-blocos de código, nos testes e na depuração, e na revisão dos relatórios. Para
+em quatro frentes, o planeamento e a estruturação do trabalho, a produção de
+blocos de código, os testes e a depuração, e a revisão dos relatórios. Para
 cada uma apresentamos casos concretos, com o problema que tínhamos, o que a IA
 propôs, como o verificámos, se estava correto, o que mudámos e o que
 aprendemos.
@@ -116,7 +92,6 @@ Secção~\ref{sec:conclusoes} conclui.
 \section{Ferramentas utilizadas}
 \label{sec:ferramentas}
 % =====================================================================
-% ~0,4 página.
 Usámos a IA de quatro formas. No início, descrevemos numa \emph{prompt} o que
 o enunciado pedia e analisámos as recomendações da IA sobre a organização do
 trabalho e as tecnologias a usar. Durante o desenvolvimento, pedimos-lhe blocos
@@ -127,23 +102,23 @@ como os ficheiros WAV de casos-limite usados para testar os codecs. Por fim,
 nos relatórios, a IA converteu os nossos rascunhos em ficheiros \LaTeX{}, com a
 formatação, as tabelas e as referências cruzadas, e reviu o texto para corrigir
 a gramática e eliminar erros, primeiro secção a secção e depois numa leitura de
-conjunto, para confirmar que a estrutura fazia sentido. A Tabela~\ref{tab:ferramentas} indica
-que ferramenta cada membro usou e para quê.
- 
+conjunto, para confirmar que a estrutura fazia sentido. A
+Tabela~\ref{tab:ferramentas} indica que ferramenta cada membro usou e para quê.
+
 \begin{table}[htbp]
 \centering
-\caption{Ferramentas de IA usadas, por frente de trabalho.}
-\label{tab:ferramentas}
 \small
 \begin{tabularx}{\linewidth}{l l X}
 \toprule
 Ferramenta & Membro(s) & Utilização \\
 \midrule
-Claude (Cowork) & Duarte Lourenço& estruturação, base comum,  revisão dos relatórios, alguns blocos de código e esclarecimento de matéria \\
+Claude (Cowork) & Duarte Lourenço & Estruturação, base comum, revisão dos relatórios, alguns blocos de código e esclarecimento de matéria \\
 Claude Code     & Francisco Matos & Teste e depuração, revisão do relatório, alguns blocos de código e esclarecimento de matéria \\
-ChatGPT         & Duarte Lourenço& Esclarecimento de dúvidas pontuais \\
+ChatGPT         & Duarte Lourenço & Esclarecimento de dúvidas pontuais \\
 \bottomrule
 \end{tabularx}
+\caption{Ferramentas de IA usadas, por frente de trabalho.}
+\label{tab:ferramentas}
 \end{table}
 
 \newpage
@@ -151,14 +126,14 @@ ChatGPT         & Duarte Lourenço& Esclarecimento de dúvidas pontuais \\
 \section{Estruturação do trabalho}
 \label{sec:estrutura}
 % =====================================================================
-No início do trabalho, a IA (Claude, no modo Cowork) foi usada como tutor: leu o
+No início do trabalho, a IA (Claude, no modo Cowork) foi usada como tutor. Leu o
 enunciado connosco, explicou os conceitos de base e propôs as linguagens, a
 organização do repositório e uma divisão de tarefas.
 
 A ideia inicial era fazer tudo em Python. A IA propôs C++ para os programas e
 codecs, uma vez que o enunciado avalia o tempo e a memória, e Python apenas para
-gráficos e medições. Aceitámos a divisão, e as medições confirmaram-na em parte:
-no histograma, o \prog{numpy} (\SI{0,096}{s}) ficou quase igual ao C++
+gráficos e medições. Aceitámos a divisão, e as medições confirmaram-na em parte.
+No histograma, o \prog{numpy} (\SI{0,096}{s}) ficou quase igual ao C++
 (\SI{0,093}{s}), porque a operação vetoriza, e a vantagem do C++ só aparece nos
 codecs, onde as decisões de cada bloco são sequenciais. Aprendemos que a escolha
 da linguagem se justifica medindo a tarefa concreta, e não em abstrato.
@@ -177,40 +152,41 @@ função delimitada (por exemplo, a leitura do WAV, o preditor, o código de Ric
 definia o que cada um devia fazer e pedia à IA uma implementação, que lhe
 explicava até a conseguir reproduzir. Por isso a IA escreveu a maior parte das
 linhas do repositório, como registam as assinaturas dos \emph{commits}, mas
-nenhum bloco entrou sem passar por três filtros:
-quem o pediu tinha de o perceber ao ponto de o saber explicar, tinha de passar
-nos testes (reconstrução comparada byte a byte com o original, métricas
-recalculadas em \prog{numpy}) e tinha de ser revisto pelo outro membro num
-\emph{pull request}. Quando a IA propôs alternativas, como na arquitetura do
-codec com perdas, tratámo-las como hipóteses a medir e não como decisões.
+nenhum bloco entrou sem passar por três filtros. Quem o pediu tinha de o
+perceber ao ponto de o saber explicar, o bloco tinha de passar nos testes
+(reconstrução comparada byte a byte com o original, métricas recalculadas em
+\prog{numpy}) e tinha de ser revisto pelo outro membro num \emph{pull request}.
+Quando a IA propôs alternativas, como na arquitetura do codec com perdas,
+tratámo-las como hipóteses a medir e não como decisões.
 
-No codec com perdas, a IA (Claude Code, usada pelo Francisco) propôs e escreveu a
-cadeia completa: MID/SIDE ortonormal, MDCT calculada por FFT, passo de quantização
-único com zona morta e um codificador aritmético em vez do código de Rice da
-Parte~II. Cada peça foi verificada de forma independente: o \prog{test\_mdct}
-compara a MDCT rápida com a definição e confirma a conservação da energia, o SNR
-anunciado pelo codificador coincide com o medido pelo \prog{wav\_cmp}, e as
-varreduras nos 20 ficheiros de treino justificam cada escolha (Relatório~1,
-Tabela~6). A proposta não estava isenta de erros: o intervalo de procura do passo
-ia só até $2^{20}$, e num ficheiro curto de 24~bits a versão inicial entregava
-\SI{71}{kbit/s} quando se pediam 32, sem avisar. Foi a bateria de casos-limite que
-o detetou, e o intervalo passou a depender dos bits por amostra. Depois de o codec
-sem perdas passar a processar em fluxo, pedimos o mesmo para o codec com perdas:
-a memória desceu de 34 para \SI{5,4}{MiB} sem alterar o SNR, e com o mesmo passo
-os ficheiros comprimidos ficaram iguais byte a byte aos da versão anterior.
+No codec com perdas, a IA (Claude Code, usada pelo Francisco) propôs e escreveu
+a cadeia completa, com MID/SIDE ortonormal, MDCT calculada por FFT, passo de
+quantização único com zona morta e um codificador aritmético em vez do código de
+Rice da Parte~II. Cada peça foi verificada de forma independente. O
+\prog{test\_mdct} compara a MDCT rápida com a definição e confirma a conservação
+da energia, o SNR anunciado pelo codificador coincide com o medido pelo
+\prog{wav\_cmp}, e as varreduras nos 20 ficheiros de treino justificam cada
+escolha (Relatório~1, Tabela~6). A proposta não estava isenta de erros. O
+intervalo de procura do passo ia só até $2^{20}$, e num ficheiro curto de
+24~bits a versão inicial entregava \SI{71}{kbit/s} quando se pediam 32, sem
+avisar. Foi a bateria de casos-limite que o detetou, e o intervalo passou a
+depender dos bits por amostra. Depois de o codec sem perdas passar a processar
+em fluxo, pedimos o mesmo para o codec com perdas, e a memória desceu de 34 para
+\SI{5,4}{MiB} sem alterar o SNR, com os ficheiros comprimidos a ficarem iguais
+byte a byte aos da versão anterior para o mesmo passo.
 
-\caso{Memória que crescia com a duração do áudio}{Claude Code}{Duarte Lourenço}
+\caso{Memória que crescia com a duração do áudio}{Claude (Cowork)}{Duarte Lourenço}
 \problema{Quando medimos a memória pela primeira vez, com o codec sem perdas já
-a comprimir bem, o pico crescia com a duração do áudio: \SI{16,5}{MiB} num
+a comprimir bem, o pico crescia com a duração do áudio, com \SI{16,5}{MiB} num
 ficheiro de \SI{5}{MiB} (contra \SI{3,4}{MiB} do \prog{flac -8}) e
 \SI{157}{MiB} num de \SI{44,4}{MiB}. A causa eram duas cópias integrais feitas
 no arranque, as amostras em inteiros de 32~bits, com o dobro do tamanho, e o
 ficheiro inteiro em bytes, só para preservar o contentor. O pico previsto, cerca
 de três vezes o tamanho do ficheiro, coincidia com o medido.}
 \proposta{Como todas as decisões são locais ao bloco e o preditor só precisa
-das três amostras anteriores, processar em fluxo: manter em memória apenas um
-lote de blocos e três \emph{frames} de histórico, escrever a saída à medida que
-avança, e ler o contentor percorrendo os blocos RIFF e saltando o bloco
+das três amostras anteriores, processar em fluxo, mantendo em memória apenas um
+lote de blocos e três \emph{frames} de histórico, escrevendo a saída à medida
+que avança, e lendo o contentor percorrendo os blocos RIFF e saltando o bloco
 \texttt{data}, em vez de o copiar.}
 \verificacao{Os ficheiros comprimidos pelas duas versões, comparados com
 \prog{cmp}, saem idênticos bit a bit, e os 25 casos-limite continuam a passar.}
@@ -227,22 +203,19 @@ comprimia bem e reconstruía o original. Só apareceu quando começámos a medir
 uma grandeza que ainda não medíamos, e por isso todos os critérios de avaliação
 devem ser medidos desde cedo.}
 
-
 % =====================================================================
 \section{Testes, depuração e medição}
 \label{sec:testes}
 % =====================================================================
-% ~0,9 página. É a frente com mais material: escolher 2 casos e resumir os
-% outros na Tabela 2.
 Todos os programas tinham de ser testados, e os testes levantavam um problema
-próprio: os números que usávamos para decidir se um programa estava certo eram
-produzidos pelo próprio código em teste. Nesta frente, a IA foi usada para
+próprio, porque os números que usávamos para decidir se um programa estava certo
+eram produzidos pelo próprio código em teste. Nesta frente, a IA foi usada para
 desenhar e escrever as ferramentas de verificação, e as conclusões sobre o que
 estava certo foram tiradas por nós a partir delas.
- 
+
 \caso{Confirmar que os resultados dos testes eram fiáveis}{Claude (Cowork)}{Duarte Lourenço}
-\problema{O \prog{wav\_cmp} é o instrumento de medida de todo o trabalho: dá o
-erro da quantização e o SNR dos dois codecs. Se tivesse um erro, todos os
+\problema{O \prog{wav\_cmp} é o instrumento de medida de todo o trabalho, porque
+dá o erro da quantização e o SNR dos dois codecs. Se tivesse um erro, todos os
 resultados estariam errados e nenhum teste o mostraria, porque os testes usavam
 o próprio \prog{wav\_cmp}. O mesmo valia para as entropias do \prog{wav\_hist}.}
 \proposta{Uma segunda implementação, independente da primeira, em Python com
@@ -261,17 +234,16 @@ descritos no Relatório~1.}
 \alteracoes{Nenhuma no código em C++, que estava certo.}
 \aprendizagem{Duas implementações só são independentes se diferirem naquilo que
 pode errar, e por isso o leitor e o algoritmo tinham de ser outros. Aprendemos
-também o limite desta verificação: as duas implementações concordam mesmo
+também o limite desta verificação, porque as duas implementações concordam mesmo
 quando a pergunta está errada. Ambas calculavam a entropia de $(L-R)/2$, e
 nenhuma podia mostrar que a poupança do MID/SIDE devia ter sido medida com
-$L-R$ (Secção~\ref{sec:relatorio}). Um teste confirma o cálculo, não a escolha
-do que se calcula.}
+$L-R$. Um teste confirma o cálculo, não a escolha do que se calcula.}
 
 \bigskip
 \bigskip
 \bigskip
 
-\caso{Medições de tempo que se contradiziam}{Claude Code}{Duarte Lourenço}
+\caso{Medições de tempo que se contradiziam}{Claude (Cowork)}{Duarte Lourenço}
 \problema{O tempo de execução é critério de avaliação, e precisávamos de saber
 se cada versão nova do codec sem perdas era mais rápida do que a anterior. Duas
 rondas de medições feitas com o mesmo código chegaram a conclusões opostas
@@ -280,108 +252,101 @@ sobre qual das versões era mais rápida.}
 corretamente o tempo e a memória de cada programa, mas não controlavam as
 condições da máquina. Quando lhe mostrámos a contradição, a IA propôs
 verificar o modo de gestão de energia do processador.}
-\verificacao{Lemos a frequência do processador durante as medições: com o
+\verificacao{Lemos a frequência do processador durante as medições. Com o
 \emph{governor} em \texttt{powersave}, corria entre \SI{1,1}{GHz} e
 \SI{1,36}{GHz}, variando de ronda para ronda. Fixámo-lo em
 \texttt{performance}, repetimos todas as medições e passámos a usar o melhor de
 três execuções.}
 \correto{Sim. Com o processador fixo, as rondas passaram a concordar entre si,
-e são essas as medições do Relatório~1. }
+e são essas as medições do Relatório~1.}
 \alteracoes{O \emph{script} de medição verifica agora o \emph{governor} antes de
 começar e, se não estiver em \texttt{performance}, avisa que os tempos não serão
-comparáveis e só continua com confirmação explícita. A
-máquina, o compilador e as versões usadas ficam registados com os
-resultados.}
-\aprendizagem{Um programa de medição correto não garante medições corretas: as
-condições em que corre fazem parte da medição. A partir daí, fixámos as
-condições da máquina antes de comparar qualquer tempo.}
- 
+comparáveis e só continua com confirmação explícita. A máquina, o compilador e
+as versões usadas ficam registados com os resultados.}
+\aprendizagem{Um programa de medição correto não garante medições corretas,
+porque as condições em que corre fazem parte da medição. A partir daí, fixámos
+as condições da máquina antes de comparar qualquer tempo.}
+
+% =====================================================================
 \section{Escrita do relatório}
 \label{sec:relatorio}
 % =====================================================================
-Nos relatórios, a IA foi usada para rever o texto, apontando erros gramaticais e
-de sintaxe, e para identificar redundâncias: várias passagens repetiam a mesma
-informação em secções diferentes e acabaram por ser cortadas, o que também ajudou
-a respeitar o limite de páginas. Foi ainda usada para gerar o código \LaTeX{} de
-tabelas e diagramas, cuja paginação verificámos compilando. A interpretação dos
-resultados, as conclusões e a decisão sobre o que entrava ou saía foram nossas.
+Nos relatórios, a IA foi usada sobretudo na forma. Ajudou a estruturar o
+documento, propondo a divisão em secções, a ordem por que os assuntos aparecem e
+o espaço a dar a cada um, reviu o texto apontando erros gramaticais e de
+sintaxe, e identificou redundâncias, porque várias passagens repetiam a mesma
+informação em secções diferentes e acabaram por ser cortadas, o que também
+ajudou a respeitar o limite de páginas. Gerou ainda o código \LaTeX{} das
+tabelas e dos diagramas, cuja paginação verificámos compilando, e passou os
+resultados dos testes e das medições para tabelas a partir dos ficheiros CSV, o
+que evitou erros de cópia manual dos números. A interpretação dos resultados, as
+conclusões e a decisão sobre o que entrava ou saía foram nossas.
 
-A revisão também apanhou erros de conteúdo. Ao confrontar o relatório com o código
-e com os ficheiros de resultados, a IA encontrou passagens desatualizadas (o texto
-dizia ``bisseção'' quando o codec já usava o método da secante), uma fórmula do
-efeito de modulação de amplitude que não correspondia à implementada e uma legenda
-que descrevia linhas que a figura não tinha. Usámo-la também para passar os
-resultados dos testes e das medições para tabelas em \LaTeX{}, a partir dos
-ficheiros CSV, o que evitou erros de cópia manual dos números.
- Em sentido contrário, fomos nós a detetar um erro da IA: os resultados
-da Parte~III que estavam no repositório tinham sido medidos nos sete ficheiros
-preliminares, e não nos 20 ficheiros de treino oficiais, e parte das medições de
-tempo tinha sido feita numa máquina diferente da descrita no Relatório~1. Todas
-as medições foram repetidas nos ficheiros e na máquina corretos antes da
-entrega. Aprendemos que a revisão por IA é útil para a forma e para a coerência
-entre texto e código, mas que os números só são fiáveis quando se sabe de onde
-vêm.
+Fomos nós a detetar que os resultados da Parte~III que estavam no repositório
+tinham sido medidos nos sete ficheiros preliminares, e não nos 20 ficheiros de
+treino oficiais, e que parte das medições de tempo tinha sido feita numa máquina
+diferente da descrita no Relatório~1. As medições foram repetidas nos 20
+ficheiros oficiais, e as de tempo e memória da Parte~III continuaram a ser as da
+outra máquina, o que fica identificado na Secção~2.3 do Relatório~1. Aprendemos
+que a revisão por IA é útil para a forma e para a coerência do texto, mas que os
+números só são fiáveis quando se sabe de onde vêm.
 
 % =====================================================================
 \section{Avaliação crítica}
 \label{sec:critica}
 % =====================================================================
-% ~0,6 página. Esta é a secção que o enunciado pede explicitamente
-% ("critical assessment of their effectiveness"). Prosa, não lista, e cada
-% afirmação ligada a um caso das secções anteriores.
- 
+
 \paragraph{Onde foi mais eficaz.}
 A IA foi mais eficaz na escrita do código e na estruturação dos relatórios. No
 código, transformou especificações nossas em implementações completas num tempo
-que não teríamos conseguido sozinhos: a cadeia do codec com perdas, da MDCT ao
-codificador aritmético, e a passagem do codec sem perdas para processamento em
-fluxo, que levou a memória de \SI{45,6}{MiB} para \SI{4,8}{MiB} sem alterar um
-único bit dos ficheiros comprimidos (Secção~\ref{sec:codigo}). Nos relatórios,
-converteu os nossos rascunhos em \LaTeX{}, gerou as tabelas diretamente a partir
-dos ficheiros de resultados e apontou redundâncias e passagens desatualizadas
-face ao código (Secção~\ref{sec:relatorio}).
- 
+que não teríamos conseguido sozinhos, como a cadeia do codec com perdas, da MDCT
+ao codificador aritmético, e a passagem do codec sem perdas para processamento
+em fluxo, que levou a memória de \SI{45,6}{MiB} para \SI{4,8}{MiB} sem alterar
+um único bit dos ficheiros comprimidos (Secção~\ref{sec:codigo}). Nos
+relatórios, converteu os nossos rascunhos em \LaTeX{}, gerou as tabelas
+diretamente a partir dos ficheiros de resultados e apontou redundâncias entre
+secções (Secção~\ref{sec:relatorio}).
+
 \paragraph{Onde falhou.}
 Os maiores problemas surgiram nos testes. Os erros da IA não estavam no
-funcionamento normal dos programas, mas nas condições à margem: o intervalo de
-procura do passo, que só falhava num ficheiro curto de 24~bits; os
-\emph{scripts} de medição, que mediam bem mas não controlavam o processador; e
+funcionamento normal dos programas, mas nas condições à margem, como o intervalo
+de procura do passo, que só falhava num ficheiro curto de 24~bits, os
+\emph{scripts} de medição, que mediam bem mas não controlavam o processador, e
 resultados medidos nos ficheiros preliminares em vez dos oficiais. Em todos
 estes casos a IA produziu algo plausível e que funcionava no caso comum, e o
 erro só se tornou visível quando o confrontámos com um caso concreto. Foram
-problemas resolúveis, mas exigiram insistência: várias iterações em que lhe
+problemas resolúveis, mas exigiram insistência, com várias iterações em que lhe
 apresentávamos o caso que falhava, até a correção resistir a todos os testes.
- 
+
 \paragraph{O que tornou a ajuda fiável.}
 O que tornou a ajuda fiável foi a verificação, não a ferramenta. Usámos
-critérios que não dependem do código que a IA escreveu: a comparação byte a
-byte com o \prog{cmp}, que não admite aproximações; testes por propriedades,
-como a reversibilidade do MID/SIDE e a conservação da energia na MDCT, que valem
-para qualquer entrada; o recálculo independente em \prog{numpy}; e a comparação
-com ferramentas externas, o \prog{flac} e o \prog{ffmpeg}. A isto juntou-se a
+critérios que não dependem do código que a IA escreveu, a comparação byte a byte
+com o \prog{cmp}, que não admite aproximações, os testes por propriedades, como
+a reversibilidade do MID/SIDE e a conservação da energia na MDCT, que valem para
+qualquer entrada, o recálculo independente em \prog{numpy}, e a comparação com
+ferramentas externas, o \prog{flac} e o \prog{ffmpeg}. A isto juntou-se a
 revisão de cada \emph{pull request} pelo outro membro e a regra de não aceitar
 código que não soubéssemos explicar. A verificação tem, no entanto, um limite
-que aprendemos na prática: confirma que o cálculo está certo, mas não que se
-está a calcular a coisa certa (Secção~\ref{sec:testes}).
- 
+que aprendemos na prática, porque confirma que o cálculo está certo, mas não que
+se está a calcular a coisa certa (Secção~\ref{sec:testes}).
+
 \paragraph{Balanço de tempo.}
 A IA poupou-nos muito tempo. Estimamos que, sem ela, o trabalho teria exigido
 pelo menos o triplo do tempo. A estimativa é grosseira, mas a diferença é
 clara, e o tempo gasto a verificar e a corrigir as propostas foi uma fração
 pequena do tempo poupado. Esse tempo de verificação não foi, no entanto,
-dispensável: foi ele que garantiu que o que entregamos está correto.
+dispensável, porque foi ele que garantiu que o que entregamos está correto.
 
 % =====================================================================
 \section{Conclusões}
 \label{sec:conclusoes}
 % =====================================================================
-% ~0,25 página.
 A IA foi uma ferramenta eficaz nas quatro frentes, e a condição para o ser foi
-a mesma em todas: nenhuma proposta foi aceite sem ser percebida e verificada por
-nós. Repetiríamos a forma de trabalhar: pedir o código bloco a bloco, testar
-cada bloco de forma independente da ferramenta que o escreveu e confirmar os
-números a partir dos ficheiros de resultados.
- 
+a mesma em todas, porque nenhuma proposta foi aceite sem ser percebida e
+verificada por nós. Repetiríamos a forma de trabalhar, pedindo o código bloco a
+bloco, testando cada bloco de forma independente da ferramenta que o escreveu e
+confirmando os números a partir dos ficheiros de resultados.
+
 Num próximo trabalho faríamos duas coisas de outra maneira. A primeira é anotar
 o uso da IA à medida que o trabalho avança, com o problema, a proposta, a
 verificação e a decisão de cada caso. Neste trabalho parte desse registo foi
@@ -391,10 +356,10 @@ critérios de avaliação desde o início, incluindo a memória e o tempo com as
 condições da máquina fixadas, porque o crescimento da memória só apareceu
 quando a começámos a medir, e as medições de tempo só se tornaram fiáveis
 depois de fixarmos o processador.
- 
-Fica também a lição mais geral: a IA acelera a escrita, mas não dispensa saber
-o que se está a fazer. Os erros que encontrámos foram apanhados porque
+
+Fica também a lição mais geral, que a IA acelera a escrita mas não dispensa
+saber o que se está a fazer. Os erros que encontrámos foram apanhados porque
 percebíamos o código e a matéria da cadeira o suficiente para desconfiar de um
 resultado.
- 
+
 \end{document}
